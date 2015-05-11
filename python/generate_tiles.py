@@ -3,10 +3,10 @@
 The tiles are generated in a way that it is possible to match them to the deepest level 
 of a QuadTree structure"""
 
-import argparse, traceback, time, os, math
-import shapely
+import argparse, traceback, time, os, math, multiprocessing, shapely
 from shapely.geometry import box
 from de9im.patterns import intersects, contains
+from pointcloud import lasops
 
 ONLY_SHOW = False
 
@@ -16,7 +16,9 @@ def argument_parser():
     description="Create a folder structure with the data spatially sorted in XY tiles")
     parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output data folder for the different QuadTree cells',type=str, required=True)
+    parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
     parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
+    parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
 def _relation(geom1, geom2):
@@ -37,7 +39,40 @@ def executeCommand(command):
     if not ONLY_SHOW:
         os.system(command)
 
-def run(inputFolder, outputFolder, numberTiles):
+def runProcess(processIndex, tasksQueue, resultsQueue, numInputFiles, tiles, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
+    kill_received = False
+    while not kill_received:
+        inputFile = None
+        try:
+            # This call will patiently wait until new job is available
+            inputFile = tasksQueue.get()
+        except:
+            # if there is an error we will quit the generation
+            kill_received = True
+        if inputFile == None:
+            # If we receive a None job, it means we can stop this workers 
+            # (all the create-image jobs are done)
+            kill_received = True
+        else:            
+            # For each file we check which tiles it overlaps:
+            #   - If it is completely inside a tile we copy the file to the output folder of the tile
+            #   - If it is partially overlapping many tiles, we run pdal with gridder filter to cut the file into the pieces that need to go to each tile folder
+            (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
+            geom = box(fMinX, fMinY, fMaxX, fMaxY)
+            print (i+1), numInputFiles, os.path.basename(inputFile), fMinX, fMinY, fMaxX, fMaxY
+            for (tName, tMinX, tMinY, tMaxX, tMaxY, tBox) in tiles:
+                relation = _relation(tBox, geom)
+                if relation == 1:
+                    executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + tName)
+                    break # If it is completely inside one tile, we do not need to check the rest
+                elif relation == 2:
+                    runPDALGridder(inputFile, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            resultsQueue.put((processIndex, inputFile))   
+
+def PDALGridder(inputFile, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles):
+    return
+
+def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     
     # Check input parameters
     if not os.path.isdir(inputFolder) and not os.path.isfile(inputFolder):
@@ -76,51 +111,32 @@ def run(inputFolder, outputFolder, numberTiles):
             tMaxX = minX + ((xIndex+1) * tSizeX)
             tMinY = minY + (yIndex * tSizeY)
             tMaxY = minY + ((yIndex+1) * tSizeY)
-            
-            tMinXGeos = tMinX
-            tMaxXGeos = tMaxX
-            tMinYGeos = tMinY
-            tMaxYGeos = tMaxY
-            # To avoid overlapping tiles
-#            if xIndex < axisTiles-1:
-#                tMaxXGeos -= scaleX
-#            if yIndex < axisTiles-1:
-#                tMaxYGeos -= scaleY
-
-            tMinXLT = tMinX
-            tMaxXLT = tMaxX
-            tMinYLT = tMinY
-            tMaxYLT = tMaxY
-
-#            tMaxXLT += scaleX
-#            tMaxYLT += scaleY
-#            if xIndex == 0:
-#                tMinXLT -= scaleX
-#            if yIndex == 0:
-#                tMinYLT -= scaleY
              
             tName = ('tile_%d_%d') % (int(tMinX), int(tMinY))
-            tiles.append((tName, tMinXLT, tMinYLT, tMaxXLT, tMaxYLT, box(tMinXGeos, tMinYGeos, tMaxXGeos, tMaxYGeos)))
+            tiles.append((tName, tMinX, tMinY, tMaxX, tMaxY, box(tMinX, tMinY, tMaxX, tMaxY)))
             executeCommand('mkdir -p ' + outputFolder + '/' + tName)
 
-    # Process the input files
-    # For each file we check which tiles it overlaps:
-    #   - If it is completely inside a tile we copy the file to the output folder of the tile
-    #   - If it is partially overlapping many tiles, we run lasmerge to cut the file into the pieces that need to go to each tile folder
+    tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
+    resultsQueue = multiprocessing.Queue() # The queue of results
+    
     for i in range(numInputFiles):
-        inputFile = inputFiles[i]
-        (_, _, minX, minY, _, maxX, maxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
-        geom = box(minX, minY, maxX, maxY)
-        print (i+1), numInputFiles, os.path.basename(inputFile), minX, minY, maxX, maxY
-        for (tName, tMinX, tMinY, tMaxX, tMaxY, tBox) in tiles:
-            relation = _relation(tBox, geom)
-            if relation == 1:
-                executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + tName)
-                break # If it is completely inside one tile, we do not need to check the rest
-            elif relation == 2:
-                executeCommand('lasmerge -i ' + inputFile + ' -inside ' + str(tMinX) + ' ' + str(tMinY) + ' ' + str(tMaxX) + ' ' + str(tMaxY) + ' -o ' + outputFolder + '/' + tName + '/cut_' + os.path.basename(inputFile))
-#                executeCommand('las2las -i ' + inputFile + ' -keep_xy ' + str(tMinX) + ' ' + str(tMinY) + ' ' + str(tMaxX) + ' ' + str(tMaxY) + ' -o ' + outputFolder + '/' + tName + '/cut_' + os.path.basename(inputFile))
-            
+        tasksQueue.put(inputFiles[i])
+    for i in range(numberProcs): #we add as many None jobs as numUsers to tell them to terminate (queue is FIFO)
+        tasksQueue.put(None)
+
+    processes = []
+    # We start numUsers users processes
+    for i in range(numberProcs):
+        processes.append(multiprocessing.Process(target=runProcess, 
+            args=(i, tasksQueue, resultsQueue, numInputFiles, tiles, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
+        processes[-1].start()
+
+    for i in range(numInputFiles):
+        resultsQueue.get()
+    # wait for all users to finish their execution
+    for i in range(numberProcs):
+        processes[i].join()
+                
     # Check that the number of points after tiling is the same as initial
     numPointsTiles = 0
     numFilesTiles = 0
@@ -139,12 +155,14 @@ if __name__ == "__main__":
     args = argument_parser().parse_args()
     print 'Input folder: ', args.input
     print 'Output folder: ', args.output
+    print 'Temporal folder: ', args.temp
     print 'Number of tiles: ', args.number
+    print 'Number of processes: ', args.proc
     
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.output, args.number)
+        run(args.input, args.output, args.temp, args.number, args.proc)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
