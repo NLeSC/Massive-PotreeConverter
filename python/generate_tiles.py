@@ -59,22 +59,25 @@ def runProcess(processIndex, tasksQueue, resultsQueue, numInputFiles, tiles, min
             #   - If it is partially overlapping many tiles, we run pdal with gridder filter to cut the file into the pieces that need to go to each tile folder
             (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
             geom = box(fMinX, fMinY, fMaxX, fMaxY)
-            print (i+1), numInputFiles, os.path.basename(inputFile), fMinX, fMinY, fMaxX, fMaxY
-            for (tName, tMinX, tMinY, tMaxX, tMaxY, tBox) in tiles:
+            print os.path.basename(inputFile), fMinX, fMinY, fMaxX, fMaxY
+            pdalReq = False
+            for (tName, tBox) in tiles:
                 relation = _relation(tBox, geom)
                 if relation == 1:
                     executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + tName)
                     break # If it is completely inside one tile, we do not need to check the rest
                 elif relation == 2:
-                    runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+                    pdalReq = True
+            if pdalReq:
+                runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
             resultsQueue.put((processIndex, inputFile))   
 
-def PDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
+def runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
     pTempFolder = tempFolder + '/' + str(processIndex)
     executeCommand('mkdir -p ' + pTempFolder)
-    executeCommand('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + axisTilesX + ' --num_y=' + axisTilesY + ' --min_x=' + minX + ' --min_y=' + minY + ' --max_x=' + maxX + ' --max_y=' + maxY)
+    executeCommand('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
     for gFile in os.listdir(pTempFolder):
-        (_, _, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
+        (_, _, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(pTempFolder + '/' + gFile)
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
         xpos = int((pX - minX) * axisTilesX / (maxX - minX))
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
@@ -125,7 +128,7 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
             tMaxY = minY + ((yIndex+1) * tSizeY)
              
             tName = ('tile_%d_%d') % (int(xIndex), int(yIndex))
-            tiles.append((tName, xIndex, yIndex, tMinX, tMinY, tMaxX, tMaxY, box(tMinX, tMinY, tMaxX, tMaxY)))
+            tiles.append((tName, box(tMinX, tMinY, tMaxX, tMaxY)))
             executeCommand('mkdir -p ' + outputFolder + '/' + tName)
 
     
@@ -149,6 +152,7 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     # Get all the results (actually we do not need the returned values)
     for i in range(numInputFiles):
         resultsQueue.get()
+        print i+1, numInputFiles
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
@@ -156,7 +160,7 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     # Check that the number of points after tiling is the same as initial
     numPointsTiles = 0
     numFilesTiles = 0
-    for (tName, _, _, _, _, _) in tiles:
+    for (tName, _) in tiles:
         (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + tName)
         numPointsTiles += tNumPoints
         numFilesTiles += len(tInputFiles)
