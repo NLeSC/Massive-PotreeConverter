@@ -66,11 +66,22 @@ def runProcess(processIndex, tasksQueue, resultsQueue, numInputFiles, tiles, min
                     executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + tName)
                     break # If it is completely inside one tile, we do not need to check the rest
                 elif relation == 2:
-                    runPDALGridder(inputFile, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+                    runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
             resultsQueue.put((processIndex, inputFile))   
 
-def PDALGridder(inputFile, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles):
-    return
+def PDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
+    pTempFolder = tempFolder + '/' + str(processIndex)
+    executeCommand('mkdir -p ' + pTempFolder)
+    executeCommand('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + axisTilesX + ' --num_y=' + axisTilesY + ' --min_x=' + minX + ' --min_y=' + minY + ' --max_x=' + maxX + ' --max_y=' + maxY)
+    for gFile in os.listdir(pTempFolder):
+        (_, _, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
+        pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
+        xpos = int((pX - minX) * axisTilesX / (maxX - minX))
+        pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
+        ypos = int((pY - minY) * axisTilesY / (maxY - minY))
+        tName = ('tile_%d_%d') % (int(xpos), int(ypos))
+        executeCommand('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + tName)
+    
 
 def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     
@@ -87,8 +98,9 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
         raise Exception('Error: Number of tiles must be the square of number which is power of 2!')
     axisTiles = int(axisTiles)
     
-    # Create output folder
+    # Create output and temporal folder
     executeCommand('mkdir -p ' + outputFolder)
+    executeCommand('mkdir -p ' + tempFolder)
     
     # Get the global extent and the as well as number of points and input files
     (inputFiles, _, numPoints, minX, minY, _, maxX, maxY, _, scaleX, scaleY, _) = lasops.getPCFolderDetails(inputFolder)
@@ -112,25 +124,29 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
             tMinY = minY + (yIndex * tSizeY)
             tMaxY = minY + ((yIndex+1) * tSizeY)
              
-            tName = ('tile_%d_%d') % (int(tMinX), int(tMinY))
-            tiles.append((tName, tMinX, tMinY, tMaxX, tMaxY, box(tMinX, tMinY, tMaxX, tMaxY)))
+            tName = ('tile_%d_%d') % (int(xIndex), int(yIndex))
+            tiles.append((tName, xIndex, yIndex, tMinX, tMinY, tMaxX, tMaxY, box(tMinX, tMinY, tMaxX, tMaxY)))
             executeCommand('mkdir -p ' + outputFolder + '/' + tName)
 
+    
+    # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
     
+    # Add tasks/inputFiles
     for i in range(numInputFiles):
         tasksQueue.put(inputFiles[i])
-    for i in range(numberProcs): #we add as many None jobs as numUsers to tell them to terminate (queue is FIFO)
+    for i in range(numberProcs): #we add as many None jobs as numberProcs to tell them to terminate (queue is FIFO)
         tasksQueue.put(None)
 
     processes = []
-    # We start numUsers users processes
+    # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
             args=(i, tasksQueue, resultsQueue, numInputFiles, tiles, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
         processes[-1].start()
 
+    # Get all the results (actually we do not need the returned values)
     for i in range(numInputFiles):
         resultsQueue.get()
     # wait for all users to finish their execution
