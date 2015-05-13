@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-"""This script is used to distribute the points of a bunch of LAS/LAZ files in different tiles.
-The tiles are generated in a way that it is possible to match them to the deepest level 
-of a QuadTree structure"""
+"""This script is used to distribute the points of a bunch of LAS/LAZ files in different tiles
+"""
 
-import argparse, traceback, time, os, math, multiprocessing, shapely
-from shapely.geometry import box
-from de9im.patterns import intersects, contains
+import argparse, traceback, time, os, math, multiprocessing
 from pointcloud import lasops
 
 ONLY_SHOW = False
@@ -15,31 +12,30 @@ def argument_parser():
     parser = argparse.ArgumentParser(
     description="Create a folder structure with the data spatially sorted in XY tiles")
     parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
-    parser.add_argument('-o','--output',default='',help='Output data folder for the different QuadTree cells',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
     parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
     parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
     parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
-def _relation(geom1, geom2):
-    """ Returns the relationship between two geometries. 
-          0 if they are disjoint, 
-          1 if geom2 is completely in geom1,
-          2 if geom2 is partly in geom1"""
-    relation = geom1.relate(geom2)
-    if not intersects.matches(relation):
-        return 0 # they are disjoint
-    elif contains.matches(relation):
-        return 1 
-    else: # there is some overlaps
-        return 2
+def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
+    xpos = int((pX - minX) * axisTilesX / (maxX - minX))
+    ypos = int((pY - minY) * axisTilesY / (maxY - minY))
+    if xpos == axisTilesX: # If it is in the edge of the box (in the maximum side) we need to put in the last tile
+        xpos -= 1
+    if ypos == axisTilesY:
+        ypos -= 1
+    return (xpos, ypos)
+
+def getTileName(xIndex, yIndex):
+    return 'tile_%d_%d' % (int(xIndex), int(yIndex))
 
 def executeCommand(command):
     print command
     if not ONLY_SHOW:
         os.system(command)
 
-def runProcess(processIndex, tasksQueue, resultsQueue, numInputFiles, tiles, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
+def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
     kill_received = False
     while not kill_received:
         inputFile = None
@@ -54,40 +50,41 @@ def runProcess(processIndex, tasksQueue, resultsQueue, numInputFiles, tiles, min
             # (all the create-image jobs are done)
             kill_received = True
         else:            
-            # For each file we check which tiles it overlaps:
-            #   - If it is completely inside a tile we copy the file to the output folder of the tile
-            #   - If it is partially overlapping many tiles, we run pdal with gridder filter to cut the file into the pieces that need to go to each tile folder
-            (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
-            geom = box(fMinX, fMinY, fMaxX, fMaxY)
-            print os.path.basename(inputFile), fMinX, fMinY, fMaxX, fMaxY
-            pdalReq = False
-            for (tName, tBox) in tiles:
-                relation = _relation(tBox, geom)
-                if relation == 1:
-                    executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + tName)
-                    break # If it is completely inside one tile, we do not need to check the rest
-                elif relation == 2:
-                    pdalReq = True
-            if pdalReq:
-                runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            # Get number of points and BBOX of this file
+            (_, fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
+            print 'Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY
+            # For the four vertices of the BBOX we get in which tile they should go
+            posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            posMinXMaxY = getTileIndex(fMinX, fMaxY, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            posMaxXMinY = getTileIndex(fMaxX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            posMaxXMaxY = getTileIndex(fMaxX, fMaxY, minX, minY, maxX, maxY, axisTiles, axisTiles)
+
+            if (posMinXMinY == posMinXMaxY) and (posMinXMinY == posMaxXMinY) and (posMinXMinY == posMaxXMaxY):
+                # If they are the same the whole file can be directly copied to the tile
+                executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + getTileName(*posMinXMinY))
+            else:
+                # If not, we run PDAL gridder to split the file in pieces that can go to the tiles
+                tGCount = runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+                if tGCount != fCount:
+                    print 'WARNING: gridded version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')'
             resultsQueue.put((processIndex, inputFile))   
 
 def runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
     pTempFolder = tempFolder + '/' + str(processIndex)
-    executeCommand('mkdir -p ' + pTempFolder)
+    if not os.path.isdir(pTempFolder):
+        executeCommand('mkdir -p ' + pTempFolder)
     executeCommand('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
+    tGCount = 0
     for gFile in os.listdir(pTempFolder):
-        (_, _, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(pTempFolder + '/' + gFile)
+        (_, gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(pTempFolder + '/' + gFile)
+        # This tile should match with some tile. Let's use the central point to see which one
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
-        xpos = int((pX - minX) * axisTilesX / (maxX - minX))
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
-        ypos = int((pY - minY) * axisTilesY / (maxY - minY))
-        tName = ('tile_%d_%d') % (int(xpos), int(ypos))
-        executeCommand('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + tName)
+        executeCommand('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY)) + '/' + gFile)
+        tGCount += gCount
+    return tGCount
     
-
 def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
-    
     # Check input parameters
     if not os.path.isdir(inputFolder) and not os.path.isfile(inputFolder):
         raise Exception('Error: Input folder does not exist!')
@@ -115,23 +112,11 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     tSizeX = (maxX - minX) / float(axisTiles)
     tSizeY = (maxY - minY) / float(axisTiles)
     
-    # Generate the tiles
-    # For each tile we generate:
-    #   - A Shapely BBox with the extent of the tile
-    #   - The empty output folder for the files that will go in that tile
-    tiles = []
+    # Generate the output folder for the tiles
     for xIndex in range(axisTiles):
         for yIndex in range(axisTiles):
-            tMinX = minX + (xIndex * tSizeX)
-            tMaxX = minX + ((xIndex+1) * tSizeX)
-            tMinY = minY + (yIndex * tSizeY)
-            tMaxY = minY + ((yIndex+1) * tSizeY)
-             
-            tName = ('tile_%d_%d') % (int(xIndex), int(yIndex))
-            tiles.append((tName, box(tMinX, tMinY, tMaxX, tMaxY)))
-            executeCommand('mkdir -p ' + outputFolder + '/' + tName)
+            executeCommand('mkdir -p ' + outputFolder + '/' + getTileName(xIndex, yIndex))
 
-    
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
@@ -146,13 +131,13 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, numInputFiles, tiles, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
+            args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
     for i in range(numInputFiles):
         resultsQueue.get()
-        print i+1, numInputFiles
+        print 'Completed %d of %d (%.02f%%)' % (i+1, numInputFiles, 100. * float(i+1) / float(numInputFiles))
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
@@ -160,13 +145,14 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     # Check that the number of points after tiling is the same as initial
     numPointsTiles = 0
     numFilesTiles = 0
-    for (tName, _) in tiles:
-        (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + tName)
-        numPointsTiles += tNumPoints
-        numFilesTiles += len(tInputFiles)
+    for xIndex in range(axisTiles):
+        for yIndex in range(axisTiles):
+            (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + getTileName(xIndex, yIndex))
+            numPointsTiles += tNumPoints
+            numFilesTiles += len(tInputFiles)
         
     if numPointsTiles != numPoints:
-        print 'Warning: #input_points = %d   #output_points = %d' % (numPoints, numPointsTiles)
+        print 'WARNING: #input_points = %d   #output_points = %d' % (numPoints, numPointsTiles)
     else:
         print '#input_points = #output_points = %d' % numPointsTiles
     print '#input_files = %d   #output_files = %d' % (numInputFiles, numFilesTiles)
