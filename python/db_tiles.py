@@ -50,6 +50,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, dbTable
                     level = len(os.path.basename(fileAbsPath)) - 5
                 insertArgs = [fileAbsPath, os.path.basename(tileAbsPath), level, int(count), float(minX), float(minY), float(maxX), float(maxY), int(srid)]
                 cursor.execute(insertStatement, insertArgs)
+            resultsQueue.put((processIndex, tileAbsPath))
     connection.close()
 
 def run(inputFolder, srid, level, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numberProcs):
