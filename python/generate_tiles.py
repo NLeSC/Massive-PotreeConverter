@@ -2,7 +2,7 @@
 """This script is used to distribute the points of a bunch of LAS/LAZ files in different tiles
 """
 
-import argparse, traceback, time, os, math, multiprocessing
+import argparse, traceback, time, os, math, multiprocessing, json
 from pointcloud import lasops
 
 ONLY_SHOW = False
@@ -43,11 +43,10 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
             # This call will patiently wait until new job is available
             inputFile = tasksQueue.get()
         except:
-            # if there is an error we will quit the generation
+            # if there is an error we will quit
             kill_received = True
         if inputFile == None:
-            # If we receive a None job, it means we can stop this workers 
-            # (all the create-image jobs are done)
+            # If we receive a None job, it means we can stop
             kill_received = True
         else:            
             # Get number of points and BBOX of this file
@@ -108,10 +107,6 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
 
     print '%s contains %d files with %d points. The XY extent is %.2f, %.2f, %.2f, %.2f' % (inputFolder, numInputFiles, numPoints, minX, minY, maxX, maxY)
     
-    # Compute the size of a tile in X and in Y
-    tSizeX = (maxX - minX) / float(axisTiles)
-    tSizeY = (maxY - minY) / float(axisTiles)
-    
     # Generate the output folder for the tiles
     for xIndex in range(axisTiles):
         for yIndex in range(axisTiles):
@@ -156,6 +151,17 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     else:
         print '#input_points = #output_points = %d' % numPointsTiles
     print '#input_files = %d   #output_files = %d' % (numInputFiles, numFilesTiles)
+    
+    # Write the tile.js file with information about the tiles
+    cFile = open(outputFolder + '/tiles.js')
+    d = {}
+    d["numberPoints"] = numPointsTiles
+    d["numXTiles"] = axisTiles
+    d["numYTiles"] = axisTiles
+    d["boundingBox"] = {'lx':minX,'ly':minY,'ux':maxX,'uy':maxY}
+    cFile.write(json.dumps(d,indent=4,sort_keys=True))
+    cFile.close()
+
     
 if __name__ == "__main__":
     args = argument_parser().parse_args()
