@@ -102,9 +102,9 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     executeCommand('mkdir -p ' + tempFolder)
     
     # Get the global extent and the as well as number of points and input files
+    print 'Collecting information about the input data...'
     (inputFiles, _, numPoints, minX, minY, _, maxX, maxY, _, scaleX, scaleY, _) = lasops.getPCFolderDetails(inputFolder)
     numInputFiles = len(inputFiles)
-
     print '%s contains %d files with %d points. The XY extent is %.2f, %.2f, %.2f, %.2f' % (inputFolder, numInputFiles, numPoints, minX, minY, maxX, maxY)
     
     # Generate the output folder for the tiles
@@ -138,24 +138,24 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
         processes[i].join()
                 
     # Check that the number of points after tiling is the same as initial
-    numPointsTiles = 0
-    numFilesTiles = 0
-    for xIndex in range(axisTiles):
-        for yIndex in range(axisTiles):
-            (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + getTileName(xIndex, yIndex))
-            numPointsTiles += tNumPoints
-            numFilesTiles += len(tInputFiles)
+#    numPointsTiles = 0
+#    numFilesTiles = 0
+#    for xIndex in range(axisTiles):
+#        for yIndex in range(axisTiles):
+#            (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + getTileName(xIndex, yIndex))
+#            numPointsTiles += tNumPoints
+#            numFilesTiles += len(tInputFiles)
         
-    if numPointsTiles != numPoints:
-        print 'WARNING: #input_points = %d   #output_points = %d' % (numPoints, numPointsTiles)
-    else:
-        print '#input_points = #output_points = %d' % numPointsTiles
-    print '#input_files = %d   #output_files = %d' % (numInputFiles, numFilesTiles)
+#    if numPointsTiles != numPoints:
+#        print 'WARNING: #input_points = %d   #output_points = %d' % (numPoints, numPointsTiles)
+#    else:
+#        print '#input_points = #output_points = %d' % numPointsTiles
+#    print '#input_files = %d   #output_files = %d' % (numInputFiles, numFilesTiles)
     
     # Write the tile.js file with information about the tiles
-    cFile = open(outputFolder + '/tiles.js')
+    cFile = open(outputFolder + '/tiles.js', 'w')
     d = {}
-    d["numberPoints"] = numPointsTiles
+    d["numberPoints"] = numPoints
     d["numXTiles"] = axisTiles
     d["numYTiles"] = axisTiles
     d["boundingBox"] = {'lx':minX,'ly':minY,'ux':maxX,'uy':maxY}
