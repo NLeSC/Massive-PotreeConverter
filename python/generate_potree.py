@@ -35,7 +35,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, lev
         else:
             tileOutputFolder = outputFolder + '/' + os.path.basename(tileAbsPath)
             os.system('mkdir -p ' + tileOutputFolder)
-            c = 'PotreeConverter -o ' + tileOutputFolder +  ' -l ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tilesAbsPath + ' -s ' + str(spacing) + ' &> ' + tileOutputFolder + '.log'
+            c = 'PotreeConverter -o ' + tileOutputFolder +  ' -l ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' -s ' + str(spacing) + ' &> ' + tileOutputFolder + '.log'
             print c
             os.system(c)
             resultsQueue.put((processIndex, tileAbsPath)) 
