@@ -52,11 +52,17 @@ def run(inputFolder, outputFolder, format, levels, spacing, numberProcs):
     # Make it absolute path
     inputFolder = os.path.abspath(inputFolder)
 
+    os.system('mkdir -p ' + outputFolder)
+
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
     
     tilesNames = os.listdir(inputFolder)
+    if 'tiles.js' in tilesNames:
+        tilesNames.remove('tiles.js')
+        os.system('cp ' + inputFolder + '/tiles.js ' + outputFolder+ '/tiles.js')
+    
     numTiles = len(tilesNames)
     
     # Add tasks/inputFiles
