@@ -1,16 +1,12 @@
 #!/usr/bin/env python
-"""Updates a level of the DB"""
+"""Create the Octtrees of each tile of the input data folder"""
 
-import argparse, traceback, time, os, math, multiprocessing, psycopg2
-from pointcloud import lasops, utils, postgresops
-
-USERNAME = utils.getUserName()
-
+import argparse, traceback, time, os, multiprocessing
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
-    description="Create a folder structure with the data spatially sorted in XY tiles")
+    description="Create the Octtrees of each tile of the input data folder")
     parser.add_argument('-i','--input',default='',help='Input folder with the tiles',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output folder for the Potree data',type=str, required=True)
     parser.add_argument('-f','--format',default='',help='Format (LAS or LAZ)',type=str, required=True)
