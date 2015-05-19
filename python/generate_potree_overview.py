@@ -15,11 +15,10 @@ def argument_parser():
     parser.add_argument('-f','--format',default='',help='Format (LAS or LAZ)',type=str, required=True)
     parser.add_argument('-e','--olevels',default='',help='Number of levels for the overview OctTree',type=int, required=True)
     parser.add_argument('-s','--spacing',default='',help='Spacing at root level',type=int, required=True)
-    parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
 
-def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing, numberProcs):
+def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing):
     # Check input parameters
     if not os.path.isdir(inputFolder):
         raise Exception('Error: Input folder does not exist!')
@@ -35,7 +34,7 @@ def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing
     inputFolder = os.path.abspath(inputFolder)
 
     os.system('mkdir -p ' + outputFolder)
-    executeCommand('mkdir -p ' + tempFolder)
+    os.system('mkdir -p ' + tempFolder)
     
     tilesNames = os.listdir(inputFolder)
     numTiles = len(tilesNames)
@@ -45,8 +44,8 @@ def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing
         dataAbsPath = inputFolder + '/' + tilesNames[i] + '/data/r'
         if os.path.isdir(dataAbsPath):
             for f in os.listdir(dataAbsPath):
-                if (len(f) - 5) <= iLevels:
-                    os.system('ln -s ' + dataAbsPath + '/' + f + ' ' + tempFolder + '/' + f)
+                if 'la' in f and ((len(f) - 5) <= iLevels):
+                    os.system('ln -s ' + dataAbsPath + '/' + f + ' ' + tempFolder + '/' + tilesNames[i] + '_' + f)
     
     
     c = 'PotreeConverter -o ' + outputFolder +  ' -l ' + str(oLevels) + ' --output-format ' + str(format).upper() + ' --source ' + tempFolder + ' -s ' + str(spacing) + ' &> ' + outputFolder + '.log'
@@ -62,12 +61,11 @@ if __name__ == "__main__":
     print 'Format: ', args.format
     print 'Output Levels: ', args.olevels
     print 'Spacing: ', args.spacing
-    print 'Number of processes: ', args.proc
     
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.output, args.temp, args.ilevels, args.format, args.olevels, args.spacing, args.proc)
+        run(args.input, args.output, args.temp, args.ilevels, args.format, args.olevels, args.spacing)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
