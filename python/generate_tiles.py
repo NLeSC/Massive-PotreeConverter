@@ -103,7 +103,7 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     
     # Get the global extent and the as well as number of points and input files
     print 'Collecting information about the input data...'
-    (inputFiles, _, numPoints, minX, minY, _, maxX, maxY, _, scaleX, scaleY, _) = lasops.getPCFolderDetails(inputFolder)
+    (inputFiles, _, numPoints, minX, minY, _, maxX, maxY, _, scaleX, scaleY, _) = lasops.getPCFolderDetails(inputFolder, numProc = numberProcs)
     numInputFiles = len(inputFiles)
     print '%s contains %d files with %d points. The XY extent is %.2f, %.2f, %.2f, %.2f' % (inputFolder, numInputFiles, numPoints, minX, minY, maxX, maxY)
     
