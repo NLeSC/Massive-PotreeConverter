@@ -1,0 +1,60 @@
+FORMAT: 1A
+HOST: https://ahn.massivepointcloudproject.nl/
+
+# AHN pointcloud viewer web api
+
+API used by the AHN pointcloud viewer.
+
+The AHN uses the Amersfoort / RD New projection (EPSG:28992).
+
+## Size of selection [/size/{left}/{bottom}/{right}/{top}]
+
++ Parameters
+    + left: 124931.360 (required, number) ... Most left or minimum x coordinate.
+    + bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
+    + right: 126241.760 (required, number) ... Most right or maximum x coordinate.
+    + top: 485730.400 (required, number) ... Most top or maximum y coordinate.
+
+### Retrieve approximate number of points in selection [GET]
+
++ Response 200 (application/json)
+
+        {
+            "points": 10193813
+        }
+
+## Prepare laz file of selection [/laz/{left}/{bottom}/{right}/{top}]
+
++ email (string) - E-mail to send laz file url to.
+
++ Parameters
+    + left: 124931.360 (required, number) ... Most left or minimum x coordinate.
+    + bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
+    + right: 126241.760 (required, number) ... Most right or maximum x coordinate.
+    + top: 485730.400 (required, number) ... Most top or maximum y coordinate.
+
+### Submit job to create a laz file of selection [POST]
+
+Background job will be started to create laz file of selection and send e-mail with url.
+
++ Request (application/json)
+
+        {
+            "email": "someone@example.com"
+        }
+
++ Response 204
+
+        When selection is ok.
+
+        + Body
+
++ Response 413 (application/json)
+
+        When selection is too big.
+
+        + Body
+
+            {
+              "error": "selection is too big"
+            }
