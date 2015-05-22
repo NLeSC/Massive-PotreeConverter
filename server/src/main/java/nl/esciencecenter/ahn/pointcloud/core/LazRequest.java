@@ -11,4 +11,19 @@ public class LazRequest {
     @Email
     @JsonProperty
     private String email;
+
+    public LazRequest() {
+    }
+
+    public LazRequest(String email) {
+        this.email = email;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }

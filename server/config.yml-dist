@@ -1,1 +1,8 @@
 maximumNumberOfPoints: 1000000
+database:
+  driverClass: org.postgresql.Driver
+  user: ahn
+  password: <some password>
+  url: jdbc:postgresql://localhost/ahn
+server:
+  rootPath: /api/*

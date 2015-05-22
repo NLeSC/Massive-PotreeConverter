@@ -5,19 +5,18 @@ import nl.esciencecenter.ahn.pointcloud.core.LazRequest;
 import nl.esciencecenter.ahn.pointcloud.services.PointCloudStore;
 
 import javax.validation.Valid;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("size/{left}/{bottom}/{right}/{top}")
+@Path("laz/{left}/{bottom}/{right}/{top}")
 @Produces(MediaType.APPLICATION_JSON)
 public class LazResource extends AbstractResource {
+    private final long maximumNumberOfPoints;
 
-    public LazResource(PointCloudStore store) {
+    public LazResource(PointCloudStore store, long maximumNumberOfPoints) {
         super(store);
+        this.maximumNumberOfPoints = maximumNumberOfPoints;
     }
 
     @POST
@@ -29,8 +28,11 @@ public class LazResource extends AbstractResource {
                            @Valid LazRequest request) {
 
         // Check selection is not too big
+        if (store.getApproximateNumberOfPoints(left, bottom, right, top) > maximumNumberOfPoints) {
+            throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
+        }
 
-        // Submit Xenon job
+        // TODO Submit Xenon job
 
         return Response.noContent().build();
     }

@@ -26,8 +26,8 @@ public class SizeResource extends AbstractResource {
                                    @PathParam("right") Double right,
                                    @PathParam("top") Double top) {
 
-        // TODO perform database query to quess-timate the number of points in the selection
+        long points = store.getApproximateNumberOfPoints(left, bottom, right, top);
 
-        return new Size(1234);
+        return new Size(points);
     }
 }
