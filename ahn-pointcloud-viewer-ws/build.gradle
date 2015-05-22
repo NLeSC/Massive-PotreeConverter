@@ -36,7 +36,6 @@ dependencies {
 
     compile group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion
     compile group: 'io.dropwizard', name: 'dropwizard-jdbi', version: dropwizardVersion
-    compile group: 'io.dropwizard', name: 'dropwizard-assets', version: dropwizardVersion
     compile group: 'org.postgresql', name: 'postgresql', version: postgresqlVersion
     compile group: 'nl.esciencecenter', name: 'xenon', version: xenonVersion
 

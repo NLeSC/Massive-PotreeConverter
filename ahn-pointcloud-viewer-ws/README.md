@@ -38,3 +38,5 @@ Deployment
 ````
 bin/server server config.yml
 ````
+
+A web service will be started on http://localhost:8080

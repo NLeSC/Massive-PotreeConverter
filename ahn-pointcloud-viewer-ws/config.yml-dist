@@ -11,5 +11,3 @@ xenon:
     queue: multi
   properties:
     xenon.adaptors.local.queue.multi.maxConcurrentJobs: 2
-server:
-  rootPath: /api/*

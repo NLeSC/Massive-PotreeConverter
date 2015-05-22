@@ -1,9 +1,7 @@
 package nl.esciencecenter.ahn.pointcloud;
 
 import io.dropwizard.Application;
-import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.jdbi.DBIFactory;
-import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import nl.esciencecenter.ahn.pointcloud.job.XenonSubmitter;
 import nl.esciencecenter.ahn.pointcloud.resources.LazResource;
@@ -14,12 +12,6 @@ import org.skife.jdbi.v2.DBI;
 public class ViewerApplication extends Application<ViewerConfiguration> {
     public static void main(String[] args) throws Exception {
         new ViewerApplication().run(args);
-    }
-
-    @Override
-    public void initialize(Bootstrap<ViewerConfiguration> bootstrap) {
-        // TODO put distribution of js app into src/main/resources/assets/
-        bootstrap.addBundle(new AssetsBundle("/assets/", "/"));
     }
 
     @Override
