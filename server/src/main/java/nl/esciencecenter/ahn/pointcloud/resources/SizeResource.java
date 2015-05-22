@@ -3,7 +3,7 @@ package nl.esciencecenter.ahn.pointcloud.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import nl.esciencecenter.ahn.pointcloud.core.Size;
-import nl.esciencecenter.ahn.pointcloud.services.PointCloudStore;
+import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

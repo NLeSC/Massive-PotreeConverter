@@ -1,6 +1,6 @@
 package nl.esciencecenter.ahn.pointcloud.resources;
 
-import nl.esciencecenter.ahn.pointcloud.services.PointCloudStore;
+import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
 
 public class AbstractResource {
     protected final PointCloudStore store;

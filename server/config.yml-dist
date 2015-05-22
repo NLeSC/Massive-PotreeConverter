@@ -4,5 +4,12 @@ database:
   user: ahn
   password: <some password>
   url: jdbc:postgresql://localhost/ahn
+xenon:
+  scheduler:
+    scheme: local
+    location: /
+    queue: multi
+  properties:
+    xenon.adaptors.local.queue.multi.maxConcurrentJobs: 2
 server:
   rootPath: /api/*

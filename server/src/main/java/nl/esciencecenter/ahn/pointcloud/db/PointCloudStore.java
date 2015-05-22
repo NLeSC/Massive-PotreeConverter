@@ -1,4 +1,4 @@
-package nl.esciencecenter.ahn.pointcloud.services;
+package nl.esciencecenter.ahn.pointcloud.db;
 
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
