@@ -2,7 +2,6 @@ package nl.esciencecenter.ahn.pointcloud.job;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import nl.esciencecenter.ahn.pointcloud.job.SchedulerConfiguration;
 
 import javax.validation.Valid;
 import java.util.Map;
@@ -16,12 +15,12 @@ public class XenonConfiguration {
     private SchedulerConfiguration scheduler;
 
     /**
-     * Xenon scheduler properties
+     * Xenon global properties
      */
     @JsonProperty
     private ImmutableMap<String, String> properties = ImmutableMap.of();
 
-    public XenonConfiguration() {
+    private XenonConfiguration() {
     }
 
     public XenonConfiguration(SchedulerConfiguration scheduler, ImmutableMap<String, String> properties) {

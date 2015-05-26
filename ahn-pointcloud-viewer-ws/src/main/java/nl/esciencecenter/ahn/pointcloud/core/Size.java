@@ -8,7 +8,7 @@ public class Size {
     @Range(min=0)
     private long points = 0;
 
-    public Size() {
+    private Size() {
     }
 
     public Size(long points) {

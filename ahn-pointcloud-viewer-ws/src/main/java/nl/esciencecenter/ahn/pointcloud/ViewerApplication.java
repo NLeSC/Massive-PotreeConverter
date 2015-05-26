@@ -20,11 +20,12 @@ public class ViewerApplication extends Application<ViewerConfiguration> {
         final DBI jdbi = factory.build(environment, configuration.getDatabase(), "postgresql");
         final PointCloudStore store = new PointCloudStore(jdbi, configuration.getSrid());
 
-        final SizeResource sizeResource = new SizeResource(store);
+        final SizeResource sizeResource = new SizeResource(store, configuration.getMaximumNumberOfPoints());
         environment.jersey().register(sizeResource);
 
         final XenonSubmitter submitter = new XenonSubmitter(configuration.getXenon());
-        final LazResource lazResource = new LazResource(store, submitter, configuration.getMaximumNumberOfPoints());
+        final String executable = configuration.getExecutable();
+        final LazResource lazResource = new LazResource(store, submitter, configuration.getMaximumNumberOfPoints(), executable);
         environment.jersey().register(lazResource);
     }
 }

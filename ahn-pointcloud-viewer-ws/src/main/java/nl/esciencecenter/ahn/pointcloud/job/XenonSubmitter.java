@@ -15,34 +15,46 @@ import org.slf4j.LoggerFactory;
 public class XenonSubmitter implements Managed {
     protected static final Logger LOGGER = LoggerFactory.getLogger(XenonSubmitter.class);
 
-    private final XenonConfiguration configuration;
+    /**
+     * Queue of scheduler to which job description will be submitted
+     */
+    private final String queue;
     private final Xenon xenon;
     private final Scheduler scheduler;
 
     public XenonSubmitter(XenonConfiguration configuration) throws XenonException {
-        this.configuration = configuration;
-
         xenon = XenonFactory.newXenon(configuration.getProperties());
-        SchedulerConfiguration schedulerConf = configuration.getScheduler();
-        scheduler = newScheduler();
+        scheduler = newScheduler(configuration.getScheduler());
+        queue = configuration.getScheduler().getQueue();
+    }
+
+    public XenonSubmitter(String queue, Xenon xenon, Scheduler scheduler) {
+        this.queue = queue;
+        this.xenon = xenon;
+        this.scheduler = scheduler;
     }
 
     /**
      * @return Scheduler
      * @throws XenonException
      */
-    protected Scheduler newScheduler() throws XenonException {
-        Credential credential = null;
-        SchedulerConfiguration schedulerConf = configuration.getScheduler();
+    protected Scheduler newScheduler(SchedulerConfiguration schedulerConf) throws XenonException {
         // TODO prompt user for password/passphrases
+        Credential credential = null;
         return xenon.jobs().newScheduler(schedulerConf.getScheme(), schedulerConf.getLocation(), credential, schedulerConf.getProperties());
     }
 
-    public void submit(JobRequest request) throws XenonException {
-        JobDescription description = request.toJobDescription();
-        description.setQueueName(configuration.getScheduler().getQueue());
+    /**
+     * Submit job to the Xenon job queue
+     *
+     * @param description Job description
+     * @return Job representing the running job.
+     * @throws XenonException
+     */
+    public Job submit(JobDescription description) throws XenonException {
+        description.setQueueName(queue);
         Job job = xenon.jobs().submitJob(scheduler, description);
-        LOGGER.info("Submitted "+ job.getIdentifier());
+        return job;
     }
 
     @Override

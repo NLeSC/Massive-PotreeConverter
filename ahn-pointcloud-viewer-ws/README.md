@@ -1,6 +1,9 @@
 AHN pointcloud viewer web service
 =================================
 
+Uses a PostGIS database to approximate number of points in selected area 
+and starts a script to create a laz file of the selection.
+
 Build
 -----
 
@@ -18,6 +21,7 @@ Development
 Run web service:
 
 First create config file `config.yml`, use `config.yml-dist` as an example.
+See `main/test/resources/example.sql` for example PostGIS database.
 
 ````
 ./gradlew run 
@@ -40,3 +44,15 @@ bin/server server config.yml
 ````
 
 A web service will be started on http://localhost:8080
+
+Generate api documentation
+--------------------------
+
+API documentation is written in https://apiblueprint.org/ format.
+
+API documentation can be previewed with:
+````
+sudo npm install -g aglio
+aglio -i apiary.apib -s
+````
+

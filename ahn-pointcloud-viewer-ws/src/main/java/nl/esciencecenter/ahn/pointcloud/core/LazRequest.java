@@ -5,17 +5,18 @@ import org.hibernate.validator.constraints.Email;
 
 import javax.validation.constraints.NotNull;
 
-public class LazRequest {
+public class LazRequest extends Selection {
 
     @NotNull
     @Email
     @JsonProperty
     private String email;
 
-    public LazRequest() {
+    private LazRequest() {
     }
 
-    public LazRequest(String email) {
+    public LazRequest(Double left, Double bottom, Double right, Double top, String email) {
+        super(left, bottom, right, top);
         this.email = email;
     }
 
@@ -25,5 +26,17 @@ public class LazRequest {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String[] toJobArguments() {
+        String[] arguments = {
+            String.valueOf(left),
+            String.valueOf(bottom),
+            String.valueOf(right),
+            String.valueOf(top),
+            email
+        };
+
+        return arguments;
     }
 }

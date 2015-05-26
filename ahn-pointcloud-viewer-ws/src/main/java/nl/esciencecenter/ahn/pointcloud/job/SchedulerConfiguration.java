@@ -32,7 +32,7 @@ public class SchedulerConfiguration {
     @JsonProperty
     private ImmutableMap<String, String> properties = ImmutableMap.of();
 
-    public SchedulerConfiguration() {
+    private SchedulerConfiguration() {
     }
 
     public SchedulerConfiguration(String scheme, String location, String queue, ImmutableMap<String, String> properties) {
