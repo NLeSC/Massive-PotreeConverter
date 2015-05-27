@@ -5,6 +5,7 @@ plugins {
   id 'idea'
   id 'eclipse'
   id 'com.github.johnrengelman.shadow' version '1.2.1'
+  id 'com.github.kt3k.coveralls' version '2.4.0'
 }
 
 compileJava {
@@ -41,6 +42,13 @@ dependencies {
 
     // deps for Xenon
     compile group: 'com.jcraft', name: 'jsch', version: jschVersion
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
 }
 
 run {
