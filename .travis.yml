@@ -1,0 +1,7 @@
+language: java
+jdk:
+  - oraclejdk8
+install:
+  - cd ahn-pointcloud-viewer-ws && ./gradlew assemble
+script:
+  - cd ahn-pointcloud-viewer-ws && ./gradlew check
