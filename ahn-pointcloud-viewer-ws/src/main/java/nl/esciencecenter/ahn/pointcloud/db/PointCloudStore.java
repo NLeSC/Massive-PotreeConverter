@@ -6,7 +6,8 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.util.LongMapper;
 
 /**
- * As postgres user:
+ *
+ * Create test PostGIS database with:
  * CREATE ROLE ahn WITH LOGIN PASSWORD '<some password>';
  * CREATE DATABASE ahn WITH OWNER ahn;
  * \c ahn
@@ -16,11 +17,11 @@ import org.skife.jdbi.v2.util.LongMapper;
  *
  */
 public class PointCloudStore {
-    private final DBI jdbi;
+    private final DBI dbi;
     private int srid;
 
-    public PointCloudStore(DBI jdbi, int srid) {
-        this.jdbi = jdbi;
+    public PointCloudStore(DBI dbi, int srid) {
+        this.dbi = dbi;
         this.srid = srid;
     }
 
@@ -31,21 +32,14 @@ public class PointCloudStore {
      * @return number of points
      */
     public long getApproximateNumberOfPoints(Selection selection) {
-        Handle handle = jdbi.open();
-        long points = handle.createQuery("SELECT SUM(points) " +
-                "FROM tiles " +
-                "WHERE the_geom && ST_SetSRID(ST_MakeBox2D(" +
-                "   ST_Point(:left, :bottom)," +
-                "   ST_Point(:right, :top)" +
-                "), :srid)")
-                .bind("left", selection.getLeft())
-                .bind("bottom", selection.getBottom())
-                .bind("right", selection.getRight())
-                .bind("top", selection.getTop())
-                .bind("srid", srid)
-                .map(LongMapper.FIRST)
-                .first();
-        handle.close();
+        TilesDAO tiles = dbi.onDemand(TilesDAO.class);
+        long points = tiles.getApproximateNumberOfPoints(
+                selection.getLeft(),
+                selection.getBottom(),
+                selection.getRight(),
+                selection.getTop(),
+                srid
+                );
 
         // TODO calculate fraction between area of requested selection and area of selected tiles
         // can be used to interpolate a better number of points
