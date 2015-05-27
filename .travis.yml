@@ -3,6 +3,8 @@ jdk:
   - oraclejdk8
 python:
   - "2.7"
+env:
+  - TERM=dumb
 install:
   - cd ahn-pointcloud-viewer-ws && ./gradlew assemble
 script:
