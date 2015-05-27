@@ -2,8 +2,6 @@ package nl.esciencecenter.ahn.pointcloud.db;
 
 import nl.esciencecenter.ahn.pointcloud.core.Selection;
 import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.util.LongMapper;
 
 /**
  *
@@ -13,7 +11,14 @@ import org.skife.jdbi.v2.util.LongMapper;
  * \c ahn
  * CREATE EXTENSION postgis;
  *
- * CREATE TABLE tiles (filename VARCHAR, geom geometry(POLYGON), points INTEGER, PRIMARY KEY (filename));
+ * CREATE TABLE tiles (
+ *  filename VARCHAR PRIMARY KEY,
+ * points INT,
+ * the_geom GEOMETRY(POLYGON, 28992)
+ * );
+ * CREATE INDEX tiles_the_geom_idx ON tiles USING GIST (the_geom);
+ *
+ * INSERT INTO tiles (filename, points, the_geom) VALUES ('u01cz1.laz', 42132530, st_geomFromText('POLYGON((124931.360 484567.840, 124931.360 485730.400, 126241.760 485730.400, 126241.760 484567.840, 124931.360 484567.840))', 28992));
  *
  */
 public class PointCloudStore {

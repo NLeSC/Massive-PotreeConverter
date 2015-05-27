@@ -1,10 +1,15 @@
+# Maximum number of points allowed to make a laz file
 maximumNumberOfPoints: 1000000
+# Executable to run with selection as arguments,
+# executable must be in path of Xenon scheduler or use an absolute path
 executable: ahn-slicer
+# To guess the number of points in a selection a PostGIS database is used
 database:
   driverClass: org.postgresql.Driver
   user: ahn
   password: <some password>
   url: jdbc:postgresql://localhost/ahn
+# To run the executable a Xenon scheduler is used
 xenon:
   scheduler:
     scheme: local
