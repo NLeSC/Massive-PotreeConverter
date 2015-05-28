@@ -48,6 +48,12 @@ public class PointCloudStore {
 
         // TODO calculate fraction between area of requested selection and area of selected tiles
         // can be used to interpolate a better number of points
+
+        // see ../python/db_tiles.py for table structure
+        // points/maxpoints = k
+        // k <1 use raw data
+        // k > use potree level, level = maxLevels-(k-1)
+        // coverage = 100/2^(k-1)
         return points;
     }
 
