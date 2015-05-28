@@ -7,6 +7,7 @@ import nl.esciencecenter.ahn.pointcloud.job.XenonSubmitter;
 import nl.esciencecenter.ahn.pointcloud.resources.LazResource;
 import nl.esciencecenter.ahn.pointcloud.resources.SizeResource;
 import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
+import nl.esciencecenter.xenon.XenonException;
 import org.skife.jdbi.v2.DBI;
 
 public class ViewerApplication extends Application<ViewerConfiguration> {
@@ -17,6 +18,10 @@ public class ViewerApplication extends Application<ViewerConfiguration> {
     @Override
     public void run(ViewerConfiguration configuration, Environment environment) throws Exception {
         final DBIFactory factory = new DBIFactory();
+        registerResources(configuration, environment, factory);
+    }
+
+    public void registerResources(ViewerConfiguration configuration, Environment environment, DBIFactory factory) throws XenonException {
         final DBI jdbi = factory.build(environment, configuration.getDatabase(), "postgresql");
         final PointCloudStore store = new PointCloudStore(jdbi, configuration.getSrid());
 
