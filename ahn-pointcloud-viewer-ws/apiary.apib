@@ -1,4 +1,4 @@
-FORMAT: 1A
+FORMAT: 1A8
 HOST: https://ahn.massivepointcloudproject.nl/api
 
 # AHN pointcloud viewer web api
@@ -9,39 +9,34 @@ The AHN uses the Amersfoort / RD New projection (EPSG:28992).
 
 ## Size of selection [/size/]
 
-Parameters of request:
-
-+ left: 124931.360 (required, number) ... Most left or minimum x coordinate.
-+ bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
-+ right: 126241.760 (required, number) ... Most right or maximum x coordinate.
-+ top: 485730.400 (required, number) ... Most top or maximum y coordinate.
-
 ### Retrieve approximate number of points in selection [POST]
 
 + Request (application/json)
 
-        {
-            "left": 124931.360,
-            "bottom": 484567.840,
-            "right": 126241.760,
-            "top": 485730.400
-        }
+    + Attributes (object)
+        + left: 124931.360 (number) - Most left or minimum x coordinate.
+        + bottom: 484567.840 (number) - Most left or minimum y coordinate.
+        + right: 126241.760 (number) - Most right or maximum x coordinate.
+        + top: 485730.400 (number) - Most top or maximum y coordinate.
+    
+    + Body
+
+            {
+                "left": 124931.360,
+                "bottom": 484567.840,
+                "right": 126241.760,
+                "top": 485730.400
+            }
 
 + Response 200 (application/json)
 
         {
-            "points": 10193813
+            "points": 10193813,
+            "level": 8,
+            "coverage": 100
         }
 
 ## Prepare laz file of selection [/laz]
-
-Parameters of request:
-
-+ left: 124931.360 (required, number) ... Most left or minimum x coordinate.
-+ bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
-+ right: 126241.760 (required, number) ... Most right or maximum x coordinate.
-+ top: 485730.400 (required, number) ... Most top or maximum y coordinate.
-+ email (string) - E-mail to send laz file url to.
 
 ### Submit job to create a laz file of selection [POST]
 
@@ -49,13 +44,23 @@ Background job will be started to create laz file of selection and send e-mail w
 
 + Request (application/json)
 
-        {
-            "left": 124931.360,
-            "bottom": 484567.840,
-            "right": 126241.760,
-            "top": 485730.400,
-            "email": "someone@example.com"
-        }
+    + Attributes (object)
+        + left: 124931.360 (number) - Most left or minimum x coordinate.
+        + bottom: 484567.840 (number) - Most left or minimum y coordinate.
+        + right: 126241.760 (number) - Most right or maximum x coordinate.
+        + top: 485730.400 (number) - Most top or maximum y coordinate.
+        + email: someone@example.com (string) - E-mail to send laz file url to.
+    
+    + Body
+    
+            {
+                "left": 124931.360,
+                "bottom": 484567.840,
+                "right": 126241.760,
+                "top": 485730.400,
+                "email": "someone@example.com",
+                "level": 8
+            }
 
 
 + Response 200 (application/json)
@@ -65,7 +70,9 @@ Background job will be started to create laz file of selection and send e-mail w
         + Body 
         
             {
-                "points": 10193813
+                "points": 10193813,
+                "level": 8,
+                "coverage": 100
             }
 
 + Response 413 (text/html)

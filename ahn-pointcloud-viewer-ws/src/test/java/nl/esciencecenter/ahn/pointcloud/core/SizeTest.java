@@ -13,14 +13,14 @@ public class SizeTest {
 
     @Test
     public void testGetPoints() throws Exception {
-        Size size = new Size(1234);
+        Size size = new Size(1234L, 8);
 
         assertThat(size.getPoints(), equalTo(1234L));
     }
 
     @Test
     public void serializesToJSON() throws Exception {
-        final Size input = new Size(42132530);
+        final Size input = new Size(42132530L, 8);
 
         final String result = MAPPER.writeValueAsString(input);
 

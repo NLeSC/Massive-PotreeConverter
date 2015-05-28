@@ -5,9 +5,9 @@ import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.jdbi.DBIFactory;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Environment;
+import nl.esciencecenter.ahn.pointcloud.resources.AbstractResource;
 import nl.esciencecenter.ahn.pointcloud.job.SchedulerConfiguration;
 import nl.esciencecenter.ahn.pointcloud.job.XenonConfiguration;
-import nl.esciencecenter.ahn.pointcloud.resources.AbstractResource;
 import org.junit.Test;
 
 import static org.mockito.Mockito.*;

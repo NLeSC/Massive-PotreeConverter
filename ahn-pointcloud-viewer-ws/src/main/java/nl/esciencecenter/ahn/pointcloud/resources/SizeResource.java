@@ -23,9 +23,6 @@ public class SizeResource extends AbstractResource {
     @POST
     @Timed
     public Size getSizeOfSelection(@Valid Selection selection) {
-
-        long points = store.getApproximateNumberOfPoints(selection);
-
-        return new Size(points);
+        return store.getApproximateNumberOfPoints(selection);
     }
 }

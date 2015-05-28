@@ -1,13 +1,15 @@
 package nl.esciencecenter.ahn.pointcloud.db;
 
 import nl.esciencecenter.ahn.pointcloud.core.Selection;
+import nl.esciencecenter.ahn.pointcloud.core.Size;
 import org.junit.Before;
 import org.junit.Test;
 import org.skife.jdbi.v2.DBI;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PointCloudStoreTest {
     private DBI dbi;
@@ -27,8 +29,9 @@ public class PointCloudStoreTest {
         when(dbi.onDemand(TilesDAO.class)).thenReturn(tiles);
 
         Selection selection = new Selection(124931.360, 484567.840, 126241.760, 485730.400);
-        long result = store.getApproximateNumberOfPoints(selection);
+        Size result = store.getApproximateNumberOfPoints(selection);
 
-        assertThat(result, is(1234L));
+        Size expected = new Size(1234L, 10, 100);
+        assertThat(result, equalTo(expected));
     }
 }

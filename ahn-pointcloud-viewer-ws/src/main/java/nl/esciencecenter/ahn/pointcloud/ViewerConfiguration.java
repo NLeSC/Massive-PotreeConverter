@@ -16,6 +16,9 @@ public class ViewerConfiguration extends Configuration {
     @JsonProperty
     private long maximumNumberOfPoints;
 
+    @Range(min=0)
+    private int octreeLevels;
+
     @Valid
     @NotNull
     @JsonProperty
@@ -38,12 +41,17 @@ public class ViewerConfiguration extends Configuration {
     private ViewerConfiguration() {
     }
 
-    public ViewerConfiguration(long maximumNumberOfPoints, int srid, DataSourceFactory database, XenonConfiguration xenon, String executable) {
+    public ViewerConfiguration(long maximumNumberOfPoints, int octreeLevels, int srid, DataSourceFactory database, XenonConfiguration xenon, String executable) {
         this.maximumNumberOfPoints = maximumNumberOfPoints;
+        this.octreeLevels = octreeLevels;
         this.srid = srid;
         this.database = database;
         this.xenon = xenon;
         this.executable = executable;
+    }
+
+    public int getOctreeLevels() {
+        return octreeLevels;
     }
 
     public long getMaximumNumberOfPoints() {
@@ -53,7 +61,6 @@ public class ViewerConfiguration extends Configuration {
     public int getSrid() {
         return srid;
     }
-
 
     public DataSourceFactory getDatabase() {
         return database;

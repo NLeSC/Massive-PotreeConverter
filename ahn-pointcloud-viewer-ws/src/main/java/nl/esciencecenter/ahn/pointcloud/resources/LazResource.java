@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class LazResource extends AbstractResource {
     private final String executable;
-    private XenonSubmitter submitter;
+    private final XenonSubmitter submitter;
 
     public LazResource(PointCloudStore store, XenonSubmitter submitter, long maximumNumberOfPoints, String executable) {
         super(store, maximumNumberOfPoints);
@@ -33,8 +33,8 @@ public class LazResource extends AbstractResource {
     public Size submitSelection(@Valid LazRequest request) throws XenonException {
 
         // Check selection is not too big
-        long points = store.getApproximateNumberOfPoints(request);
-        if (points > maximumNumberOfPoints) {
+        Size size = store.getApproximateNumberOfPoints(request);
+        if (size.getPoints() > maximumNumberOfPoints) {
             throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
         }
 
@@ -44,6 +44,6 @@ public class LazResource extends AbstractResource {
         description.setExecutable(executable);
         submitter.submit(description);
 
-        return new Size(points);
+        return size;
     }
 }

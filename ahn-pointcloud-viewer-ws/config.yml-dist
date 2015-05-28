@@ -3,6 +3,8 @@ maximumNumberOfPoints: 1000000
 # Executable to run with selection as arguments,
 # executable must be in path of Xenon scheduler or use an absolute path
 executable: ahn-slicer
+# Number of levels in the octree
+octreeLevels: 9
 # To guess the number of points in a selection a PostGIS database is used
 database:
   driverClass: org.postgresql.Driver
