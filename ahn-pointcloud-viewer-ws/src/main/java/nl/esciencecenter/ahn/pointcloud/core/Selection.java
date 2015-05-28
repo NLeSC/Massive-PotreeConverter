@@ -10,19 +10,19 @@ import java.util.Objects;
 public class Selection {
     @NotNull
     @JsonProperty
-    protected Double left;
+    private Double left;
 
     @NotNull
     @JsonProperty
-    protected Double bottom;
+    private Double bottom;
 
     @NotNull
     @JsonProperty
-    protected Double right;
+    private Double right;
 
     @NotNull
     @JsonProperty
-    protected Double top;
+    private Double top;
 
     public Selection(Double left, Double bottom, Double right, Double top) {
         this.left = left;
@@ -55,14 +55,14 @@ public class Selection {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Selection selection = (Selection) o;
-        return Objects.equals(left, selection.left) &&
-                Objects.equals(bottom, selection.bottom) &&
-                Objects.equals(right, selection.right) &&
-                Objects.equals(top, selection.top);
+        return Objects.equals(getLeft(), selection.getLeft()) &&
+                Objects.equals(getBottom(), selection.getBottom()) &&
+                Objects.equals(getRight(), selection.getRight()) &&
+                Objects.equals(getTop(), selection.getTop());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, bottom, right, top);
+        return Objects.hash(getLeft(), getBottom(), getRight(), getTop());
     }
 }

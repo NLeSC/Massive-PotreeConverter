@@ -30,10 +30,10 @@ public class LazRequest extends Selection {
 
     public String[] toJobArguments() {
         String[] arguments = {
-            String.valueOf(left),
-            String.valueOf(bottom),
-            String.valueOf(right),
-            String.valueOf(top),
+            String.valueOf(getLeft()),
+            String.valueOf(getBottom()),
+            String.valueOf(getRight()),
+            String.valueOf(getTop()),
             email
         };
 
