@@ -1,0 +1,60 @@
+plugins {
+  id 'java'
+  id 'application'
+  id 'jacoco'
+  id 'idea'
+  id 'eclipse'
+  id 'com.github.johnrengelman.shadow' version '1.2.1'
+  id 'com.github.kt3k.coveralls' version '2.4.0'
+}
+
+compileJava {
+  sourceCompatibility = 1.7
+  targetCompatibility = 1.7
+}
+
+version = '1.0'
+
+mainClassName = 'nl.esciencecenter.ahn.pointcloud.ViewerApplication'
+
+ext {
+    xenonVersion = '1.0.0'
+    dropwizardVersion = '0.8.1'
+    postgresqlVersion = '9.4-1201-jdbc41'
+    jschVersion = '0.1.52'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://nlesc.github.io/Xenon/repo'
+    }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'io.dropwizard', name: 'dropwizard-testing', version: dropwizardVersion
+
+    compile group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion
+    compile group: 'io.dropwizard', name: 'dropwizard-jdbi', version: dropwizardVersion
+    compile group: 'org.postgresql', name: 'postgresql', version: postgresqlVersion
+    compile group: 'nl.esciencecenter', name: 'xenon', version: xenonVersion
+
+    // deps for Xenon
+    compile group: 'com.jcraft', name: 'jsch', version: jschVersion
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
+
+run {
+    args 'server', 'config.yml'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.4'
+}
