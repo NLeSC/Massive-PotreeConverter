@@ -13,10 +13,9 @@ public class SelectionTest {
 
     @Test
     public void deserializesFromJSON() throws Exception {
-        final Selection expected = new Selection(124931.360, 484567.840, 126241.760, 485730.400);
-
         final Selection result = MAPPER.readValue(fixture("fixtures/selection.json"), Selection.class);
 
+        final Selection expected = new Selection(124931.360, 484567.840, 126241.760, 485730.400);
         assertThat(result, equalTo(expected));
     }
 }

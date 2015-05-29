@@ -2,10 +2,16 @@ package nl.esciencecenter.ahn.pointcloud.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.validator.constraints.Email;
+import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.NotNull;
 
 public class LazRequest extends Selection {
+
+    @NotNull
+    @Range(min=0, max=24)
+    @JsonProperty
+    private int level;
 
     @NotNull
     @Email
@@ -15,17 +21,18 @@ public class LazRequest extends Selection {
     private LazRequest() {
     }
 
-    public LazRequest(Double left, Double bottom, Double right, Double top, String email) {
+    public LazRequest(Double left, Double bottom, Double right, Double top, String email, int level) {
         super(left, bottom, right, top);
         this.email = email;
+        this.level = level;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public int getLevel() {
+        return level;
     }
 
     public String[] toJobArguments() {
@@ -34,7 +41,8 @@ public class LazRequest extends Selection {
             String.valueOf(getBottom()),
             String.valueOf(getRight()),
             String.valueOf(getTop()),
-            email
+            email,
+            String.valueOf(level)
         };
 
         return arguments;

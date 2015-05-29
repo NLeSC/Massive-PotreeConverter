@@ -1,5 +1,5 @@
-# Maximum number of points allowed to make a laz file
-maximumNumberOfPoints: 1000000
+# Maximum number of points allowed to make a laz file with 100% of the points
+pointsLimit: 1000000
 # Executable to run with selection as arguments,
 # executable must be in path of Xenon scheduler or use an absolute path
 executable: ahn-slicer

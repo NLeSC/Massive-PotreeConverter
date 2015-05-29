@@ -27,7 +27,7 @@ public class ViewerConfigurationTest {
 
     @Test
     public void testGetMaximumNumberOfPoints() throws Exception {
-        assertThat(config.getMaximumNumberOfPoints(), is(5L));
+        assertThat(config.getPointsLimit(), is(5L));
     }
 
     @Test

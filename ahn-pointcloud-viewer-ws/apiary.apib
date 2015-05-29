@@ -7,6 +7,8 @@ API used by the AHN pointcloud viewer.
 
 The AHN uses the Amersfoort / RD New projection (EPSG:28992).
 
+# Group Sizes
+
 ## Size of selection [/size/]
 
 ### Retrieve approximate number of points in selection [POST]
@@ -30,11 +32,26 @@ The AHN uses the Amersfoort / RD New projection (EPSG:28992).
 
 + Response 200 (application/json)
 
-        {
-            "points": 10193813,
-            "level": 8,
-            "coverage": 100
-        }
+    + Attributes (object)
+        + points: 10193813 (number) - Approximate number of points in selection
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
+        + coverage: 100 (number) - Percentage of points returned with given level.
+
+    + Body
+
+            {
+                "points": 10193813,
+                "level": 8,
+                "coverage": 100
+            }
+            
++ Response 413 (text/html)
+
+    When selection is too large.
+
+    + Body
+
+            Request Entity Too Large            
 
 ## Prepare laz file of selection [/laz]
 
@@ -50,6 +67,7 @@ Background job will be started to create laz file of selection and send e-mail w
         + right: 126241.760 (number) - Most right or maximum x coordinate.
         + top: 485730.400 (number) - Most top or maximum y coordinate.
         + email: someone@example.com (string) - E-mail to send laz file url to.
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
     
     + Body
     
@@ -65,21 +83,25 @@ Background job will be started to create laz file of selection and send e-mail w
 
 + Response 200 (application/json)
 
-        When selection is ok.
+    + Attributes (object)
+        + points: 10193813 (number) - Approximate number of points in selection
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
+        + coverage: 100 (number) - Percentage of points returned with given level.
 
-        + Body 
-        
+    + Body
+
             {
                 "points": 10193813,
                 "level": 8,
                 "coverage": 100
             }
 
+
 + Response 413 (text/html)
+ 
+    When selection is too large.
 
-        When selection is too big.
-
-        + Body
+    + Body
 
             Request Entity Too Large
 
