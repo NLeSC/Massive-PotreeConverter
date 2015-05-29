@@ -11,6 +11,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 public class ViewerConfiguration extends Configuration {
+    private static final int EPSG_AMERSFOORT_RD_NEW = 28992;
+
     @Valid
     @Range(min=1)
     @JsonProperty
@@ -19,7 +21,7 @@ public class ViewerConfiguration extends Configuration {
     @Valid
     @NotNull
     @JsonProperty
-    private int srid = 28992;
+    private int srid = EPSG_AMERSFOORT_RD_NEW;
 
     @Valid
     @NotNull

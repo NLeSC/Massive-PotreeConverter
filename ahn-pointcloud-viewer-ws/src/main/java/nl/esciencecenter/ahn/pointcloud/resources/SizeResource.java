@@ -24,6 +24,6 @@ public class SizeResource extends AbstractResource {
     @POST
     @Timed
     public Size getSizeOfSelection(@Valid Selection selection) throws TooManyPoints {
-        return store.getApproximateNumberOfPoints(selection);
+        return getStore().getApproximateNumberOfPoints(selection);
     }
 }

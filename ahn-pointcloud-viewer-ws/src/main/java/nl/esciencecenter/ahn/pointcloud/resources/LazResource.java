@@ -36,7 +36,7 @@ public class LazResource extends AbstractResource {
         // Check selection is not too big
         Size size = null;
         try {
-            size = store.getApproximateNumberOfPoints(request);
+            size = getStore().getApproximateNumberOfPoints(request);
         } catch (TooManyPoints tooManyPoints) {
             throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
         }

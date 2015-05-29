@@ -88,8 +88,8 @@ public class Size {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) { return true;}
+        if (o == null || getClass() != o.getClass()) {return false;}
         Size size = (Size) o;
         return Objects.equals(points, size.points) &&
                 Objects.equals(level, size.level) &&
