@@ -1,0 +1,46 @@
+Potree Converter build instructions
+=======================================
+
+We are using a potree converter tweaked to be able to specify the bounding cube used for the OctTree generation
+
+git clone -b fix_fstream https://github.com/oscarmartinezrubi/PotreeConverter.git
+
+In addition to liblas and its requirements (proj, tiff, geotiff, gdal and laszip) we also need boost 1.55
+
+For installing liblas and its dependencies as well as boost 1.55 we recommend looking at https://github.com/NLeSC/pointcloud-benchmark/tree/master/install for different methods of installing liblas (and other point cloud related software) in different OSs
+ Assuming the code is downloaded in /opt/PotreeConverter/
+cd /opt/PotreeConverter/
+mkdir build
+mkdir makefiles 
+cd makefiles
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/PotreeConverter/build -DBoost_DIR=/opt/boost_1_55_0/build -DBoost_INCLUDE_DIR=/opt/boost_1_55_0/build/include -DBoost_INCLUDE_DIRS=/opt/boost_1_55_0/build/include -DBoost_LIBRARY_DIRS=/opt/boost_1_55_0/build/lib -DLIBLAS_INCLUDE_DIR=/opt/liblas/build/include -DLIBLAS_LIBRARY=/opt/liblas/build/lib/liblas.so
+make 
+make install
+
+Possible issues
+---------------
+
+There are a couple of issues that may arise with the installation of PotreeConverter
+
+1 - The specified boost is ignored. In order to force the a certain version of Boost we modify the CMakeLists.txt 
+
+find_package(Boost 1.55.0 COMPONENTS system thread filesystem program_options regex REQUIRED)
+
+2 - We need to add #include <limits> in PotreeConverter/include/AABB.h
+
+3 - If it compaing about the CPLMutexHolder it means that GDAL is not found by the linker. To solve this you need to make sure that the next environmental variables are set before run the cmake command:
+
+export LIBLAS_HOME=/home/oscar/sw/liblas/build
+export LASZIP_HOME=/home/oscar/sw/laszip-2.1.0/build
+export BOOST_HOME=/usr/local
+export GDAL_HOME=/home/oscar/sw/gdal-trunk/build
+export CWD_HOME=`pwd`
+export BOOST_ROOT=$BOOST_HOME
+export CMAKE_MODULE_PATH=$LIBLAS_HOME:${CMAKE_MODULE_PATH}
+export LD_RUN_PATH=$GDAL_HOME/lib:$BOOST_HOME/lib:$LASZIP_HOME/lib:$LIBLAS_HOME/lib:$CWD_HOME/lib:$LD_RUN_PATH
+export LD_LIBRARY_PATH=$GDAL_HOME/lib:$BOOST_HOME/lib:$LASZIP_HOME/lib:$LIBLAS_HOME/lib:$CWD_HOME/lib:$LD_LIBRARY_PATH
+export LIBRARY_PATH=$GDAL_HOME/lib:$BOOST_HOME/lib:$LASZIP_HOME/lib:$LIBLAS_HOME/lib:$CWD_HOME/lib:$LIBRARY_PATH
+export C_INCLUDE_PATH=$LIBLAS_HOME/include/liblas/capi:${C_INCLUDE_PATH}
+export LDFLAGS="${LDFLAGS} -L$GDAL_HOME/lib -L$BOOST_HOME/lib -L$LIBLAS_HOME/lib -L$LASZIP_HOME/lib -llas_c -llaszip"
+
+4 - Current version may not be compiling (it does not at date 25/05/2015). There is some issue with fstream that can be fixed using the branch fix_fstream as proposed before. If you get this message be sure that you used this branch
