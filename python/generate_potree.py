@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Create the Octtrees of each tile of the input data folder"""
+"""Create the OctTrees of each tile of the input data folder"""
 
 import argparse, traceback, time, os, multiprocessing
 
@@ -12,10 +12,11 @@ def argument_parser():
     parser.add_argument('-f','--format',default='',help='Format (LAS or LAZ)',type=str, required=True)
     parser.add_argument('-l','--levels',default='',help='Number of levels for OctTree',type=int, required=True)
     parser.add_argument('-s','--spacing',default='',help='Spacing at root level',type=int, required=True)
+    parser.add_argument('-e','--extent',default='',help='Extent to be used for all the OctTree, specify as minX,minY,minZ,maxX,maxY,maxZ',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
-def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, levels, spacing):
+def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, levels, spacing, extent):
     kill_received = False
     while not kill_received:
         tileAbsPath = None
@@ -31,12 +32,12 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, lev
         else:
             tileOutputFolder = outputFolder + '/' + os.path.basename(tileAbsPath)
             os.system('mkdir -p ' + tileOutputFolder)
-            c = 'PotreeConverter -o ' + tileOutputFolder +  ' -l ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' -s ' + str(spacing) + ' &> ' + tileOutputFolder + '.log'
+            c = 'PotreeConverter --outdir ' + tileOutputFolder +  ' --levels ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' --spacing ' + str(spacing) + ' --aabb ' + (' '.join(extent.split(','))) + ' &> ' + tileOutputFolder + '.log'
             print c
             os.system(c)
             resultsQueue.put((processIndex, tileAbsPath)) 
 
-def run(inputFolder, outputFolder, format, levels, spacing, numberProcs):
+def run(inputFolder, outputFolder, format, levels, spacing, extent, numberProcs):
     # Check input parameters
     if not os.path.isdir(inputFolder):
         raise Exception('Error: Input folder does not exist!')
@@ -71,7 +72,7 @@ def run(inputFolder, outputFolder, format, levels, spacing, numberProcs):
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, outputFolder, format, levels, spacing)))
+            args=(i, tasksQueue, resultsQueue, outputFolder, format, levels, spacing, extent)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
@@ -90,12 +91,13 @@ if __name__ == "__main__":
     print 'Format: ', args.format
     print 'Levels: ', args.levels
     print 'Spacing: ', args.spacing
+    print 'Extent: ', args.extent
     print 'Number of processes: ', args.proc
     
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.output, args.format, args.levels, args.spacing, args.proc)
+        run(args.input, args.output, args.format, args.levels, args.spacing, args.extent, args.proc)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
