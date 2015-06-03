@@ -3,11 +3,13 @@ package nl.esciencecenter.ahn.pointcloud.resources;
 import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
 
 public class AbstractResource {
-    protected final PointCloudStore store;
-    protected final long maximumNumberOfPoints;
+    private final PointCloudStore store;
 
-    public AbstractResource(PointCloudStore store, long maximumNumberOfPoints) {
+    public AbstractResource(PointCloudStore store) {
         this.store = store;
-        this.maximumNumberOfPoints = maximumNumberOfPoints;
+    }
+
+    public PointCloudStore getStore() {
+        return store;
     }
 }

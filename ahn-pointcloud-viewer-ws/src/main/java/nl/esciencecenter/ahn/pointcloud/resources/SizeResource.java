@@ -5,6 +5,7 @@ import com.codahale.metrics.annotation.Timed;
 import nl.esciencecenter.ahn.pointcloud.core.Selection;
 import nl.esciencecenter.ahn.pointcloud.core.Size;
 import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
+import nl.esciencecenter.ahn.pointcloud.exception.TooManyPoints;
 
 import javax.validation.Valid;
 import javax.ws.rs.POST;
@@ -16,16 +17,13 @@ import javax.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class SizeResource extends AbstractResource {
 
-    public SizeResource(PointCloudStore store, long maximumNumberOfPoints) {
-        super(store, maximumNumberOfPoints);
+    public SizeResource(PointCloudStore store) {
+        super(store);
     }
 
     @POST
     @Timed
-    public Size getSizeOfSelection(@Valid Selection selection) {
-
-        long points = store.getApproximateNumberOfPoints(selection);
-
-        return new Size(points);
+    public Size getSizeOfSelection(@Valid Selection selection) throws TooManyPoints {
+        return getStore().getApproximateNumberOfPoints(selection);
     }
 }

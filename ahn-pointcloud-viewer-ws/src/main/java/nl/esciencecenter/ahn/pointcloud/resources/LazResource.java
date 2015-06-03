@@ -4,6 +4,7 @@ import com.codahale.metrics.annotation.Timed;
 import nl.esciencecenter.ahn.pointcloud.core.LazRequest;
 import nl.esciencecenter.ahn.pointcloud.core.Size;
 import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
+import nl.esciencecenter.ahn.pointcloud.exception.TooManyPoints;
 import nl.esciencecenter.ahn.pointcloud.job.XenonSubmitter;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.jobs.JobDescription;
@@ -20,10 +21,10 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class LazResource extends AbstractResource {
     private final String executable;
-    private XenonSubmitter submitter;
+    private final XenonSubmitter submitter;
 
-    public LazResource(PointCloudStore store, XenonSubmitter submitter, long maximumNumberOfPoints, String executable) {
-        super(store, maximumNumberOfPoints);
+    public LazResource(PointCloudStore store, XenonSubmitter submitter, String executable) {
+        super(store);
         this.submitter = submitter;
         this.executable = executable;
     }
@@ -33,8 +34,10 @@ public class LazResource extends AbstractResource {
     public Size submitSelection(@Valid LazRequest request) throws XenonException {
 
         // Check selection is not too big
-        long points = store.getApproximateNumberOfPoints(request);
-        if (points > maximumNumberOfPoints) {
+        Size size = null;
+        try {
+            size = getStore().getApproximateNumberOfPoints(request);
+        } catch (TooManyPoints tooManyPoints) {
             throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
         }
 
@@ -44,6 +47,6 @@ public class LazResource extends AbstractResource {
         description.setExecutable(executable);
         submitter.submit(description);
 
-        return new Size(points);
+        return size;
     }
 }

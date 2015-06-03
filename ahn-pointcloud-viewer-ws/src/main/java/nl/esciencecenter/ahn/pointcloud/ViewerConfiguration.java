@@ -11,15 +11,17 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 public class ViewerConfiguration extends Configuration {
+    private static final int EPSG_AMERSFOORT_RD_NEW = 28992;
+
     @Valid
     @Range(min=1)
     @JsonProperty
-    private long maximumNumberOfPoints;
+    private long pointsLimit;
 
     @Valid
     @NotNull
     @JsonProperty
-    private int srid = 28992;
+    private int srid = EPSG_AMERSFOORT_RD_NEW;
 
     @Valid
     @NotNull
@@ -39,21 +41,20 @@ public class ViewerConfiguration extends Configuration {
     }
 
     public ViewerConfiguration(long maximumNumberOfPoints, int srid, DataSourceFactory database, XenonConfiguration xenon, String executable) {
-        this.maximumNumberOfPoints = maximumNumberOfPoints;
+        this.pointsLimit = maximumNumberOfPoints;
         this.srid = srid;
         this.database = database;
         this.xenon = xenon;
         this.executable = executable;
     }
 
-    public long getMaximumNumberOfPoints() {
-        return maximumNumberOfPoints;
+    public long getPointsLimit() {
+        return pointsLimit;
     }
 
     public int getSrid() {
         return srid;
     }
-
 
     public DataSourceFactory getDatabase() {
         return database;

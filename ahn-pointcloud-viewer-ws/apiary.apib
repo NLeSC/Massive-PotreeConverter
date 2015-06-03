@@ -1,4 +1,4 @@
-FORMAT: 1A
+FORMAT: 1A8
 HOST: https://ahn.massivepointcloudproject.nl/api
 
 # AHN pointcloud viewer web api
@@ -7,41 +7,53 @@ API used by the AHN pointcloud viewer.
 
 The AHN uses the Amersfoort / RD New projection (EPSG:28992).
 
+# Group Sizes
+
 ## Size of selection [/size/]
-
-Parameters of request:
-
-+ left: 124931.360 (required, number) ... Most left or minimum x coordinate.
-+ bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
-+ right: 126241.760 (required, number) ... Most right or maximum x coordinate.
-+ top: 485730.400 (required, number) ... Most top or maximum y coordinate.
 
 ### Retrieve approximate number of points in selection [POST]
 
 + Request (application/json)
 
-        {
-            "left": 124931.360,
-            "bottom": 484567.840,
-            "right": 126241.760,
-            "top": 485730.400
-        }
+    + Attributes (object)
+        + left: 124931.360 (number) - Most left or minimum x coordinate.
+        + bottom: 484567.840 (number) - Most left or minimum y coordinate.
+        + right: 126241.760 (number) - Most right or maximum x coordinate.
+        + top: 485730.400 (number) - Most top or maximum y coordinate.
+    
+    + Body
+
+            {
+                "left": 124931.360,
+                "bottom": 484567.840,
+                "right": 126241.760,
+                "top": 485730.400
+            }
 
 + Response 200 (application/json)
 
-        {
-            "points": 10193813
-        }
+    + Attributes (object)
+        + points: 10193813 (number) - Approximate number of points in selection
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
+        + coverage: 100 (number) - Percentage of points returned with given level.
+
+    + Body
+
+            {
+                "points": 10193813,
+                "level": 8,
+                "coverage": 100
+            }
+            
++ Response 413 (text/html)
+
+    When selection is too large.
+
+    + Body
+
+            Request Entity Too Large            
 
 ## Prepare laz file of selection [/laz]
-
-Parameters of request:
-
-+ left: 124931.360 (required, number) ... Most left or minimum x coordinate.
-+ bottom: 484567.840 (required, number) ... Most left or minimum y coordinate.
-+ right: 126241.760 (required, number) ... Most right or maximum x coordinate.
-+ top: 485730.400 (required, number) ... Most top or maximum y coordinate.
-+ email (string) - E-mail to send laz file url to.
 
 ### Submit job to create a laz file of selection [POST]
 
@@ -49,30 +61,47 @@ Background job will be started to create laz file of selection and send e-mail w
 
 + Request (application/json)
 
-        {
-            "left": 124931.360,
-            "bottom": 484567.840,
-            "right": 126241.760,
-            "top": 485730.400,
-            "email": "someone@example.com"
-        }
+    + Attributes (object)
+        + left: 124931.360 (number) - Most left or minimum x coordinate.
+        + bottom: 484567.840 (number) - Most left or minimum y coordinate.
+        + right: 126241.760 (number) - Most right or maximum x coordinate.
+        + top: 485730.400 (number) - Most top or maximum y coordinate.
+        + email: someone@example.com (string) - E-mail to send laz file url to.
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
+    
+    + Body
+    
+            {
+                "left": 124931.360,
+                "bottom": 484567.840,
+                "right": 126241.760,
+                "top": 485730.400,
+                "email": "someone@example.com",
+                "level": 8
+            }
 
 
 + Response 200 (application/json)
 
-        When selection is ok.
+    + Attributes (object)
+        + points: 10193813 (number) - Approximate number of points in selection
+        + level: 8 (number) - Level in octree pyramid to fetch points from. Lower number means less points.
+        + coverage: 100 (number) - Percentage of points returned with given level.
 
-        + Body 
-        
+    + Body
+
             {
-                "points": 10193813
+                "points": 10193813,
+                "level": 8,
+                "coverage": 100
             }
 
+
 + Response 413 (text/html)
+ 
+    When selection is too large.
 
-        When selection is too big.
-
-        + Body
+    + Body
 
             Request Entity Too Large
 

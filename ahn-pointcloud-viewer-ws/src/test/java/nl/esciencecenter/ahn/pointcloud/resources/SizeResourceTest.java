@@ -3,6 +3,7 @@ package nl.esciencecenter.ahn.pointcloud.resources;
 import nl.esciencecenter.ahn.pointcloud.core.Selection;
 import nl.esciencecenter.ahn.pointcloud.core.Size;
 import nl.esciencecenter.ahn.pointcloud.db.PointCloudStore;
+import nl.esciencecenter.ahn.pointcloud.exception.TooManyPoints;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,14 +21,14 @@ public class SizeResourceTest {
     }
 
     @Test
-    public void testGetSizeOfSelection() throws Exception {
+    public void testGetSizeOfSelection() throws TooManyPoints {
         Selection selection = new Selection(124931.360, 484567.840, 126241.760, 485730.400);
-        when(store.getApproximateNumberOfPoints(selection)).thenReturn(100L);
-        SizeResource resource = new SizeResource(store, 500L);
+        Size expected = new Size(100L, 8, 100.0);
+        when(store.getApproximateNumberOfPoints(selection)).thenReturn(expected);
+        SizeResource resource = new SizeResource(store);
 
         Size size = resource.getSizeOfSelection(selection);
 
-        Size expected = new Size(100L);
         assertThat(size, equalTo(expected));
     }
 }

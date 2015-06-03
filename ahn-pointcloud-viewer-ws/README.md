@@ -42,7 +42,7 @@ virtualenv env
 . env/bin/activate
 pip install httpie
 http -pHBhb http://localhost:8080/size left:=124932.60 bottom:=484568.840 right:=124942.60 top:=484588.840
-http -pHBhb http://localhost:8080/laz left:=124932.60 bottom:=484568.840 right:=124942.60 top:=484588.840 email=someone@example.com
+http -pHBhb http://localhost:8080/laz left:=124932.60 bottom:=484568.840 right:=124942.60 top:=484588.840 email=someone@example.com level:=13
 ````
 
 Build

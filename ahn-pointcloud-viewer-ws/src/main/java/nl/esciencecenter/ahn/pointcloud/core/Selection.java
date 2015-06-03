@@ -52,8 +52,8 @@ public class Selection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {return true;}
+        if (o == null || getClass() != o.getClass()) {return false;}
         Selection selection = (Selection) o;
         return Objects.equals(getLeft(), selection.getLeft()) &&
                 Objects.equals(getBottom(), selection.getBottom()) &&
