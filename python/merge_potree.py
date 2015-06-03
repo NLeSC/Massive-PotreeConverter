@@ -1,28 +1,43 @@
 #!/usr/bin/env python
-"""Merge the Potree OctTrees of each tile into a single one."""
+"""Merge two Potree OctTrees into a single one."""
 
 import argparse, traceback, time, os, multiprocessing, struct, filecmp, json
+
+OCTTREE_NODE_NUM_CHILDREN = 8
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
-    description="Merge the Potree OctTrees of each tile into a single one. This process deletes the original tiles, only one tile in the end with all the data")
-    parser.add_argument('-i','--input',default='',help='Input folder with the Potree OctTrees',type=str, required=True)
+    description="Merge two Potree OctTrees into a single one.")
+    parser.add_argument('-a','--inputa',default='',help='Input Potree OctTree A',type=str, required=True)
+    parser.add_argument('-b','--inputb',default='',help='Input Potree OctTree B',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output Potree OctTree',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
-def readHRC(hrcFileAbsPath):
-    with open(hrcFileAbsPath, "rb") as f:
-        b = f.read(1)
-        n = f.read(4)
-        while b != "":
+def getNode(binaryFile, level, data, lastInLevel):
+    # Add an empty array for a new level
+    if level not in data:
+        data[level] = []
     
-            struct.unpack('b',b)
-            struct.unpack('i',n)
-            
-            # read next
-            b = f.read(1)
-            n = f.read(4)
+    # Read a node from the binary file 
+    b = struct.unpack('b', binaryFile.read(1))[0]
+    n = struct.unpack('i', binaryFile.read(4))[0]
+    
+    for i in range(OCTTREE_NODE_NUM_CHILDREN):
+        data[level].append(((1<<i) & b) == 1)
+    
+    if lastInLevel:
+        lastInNextLevel = (len(data[level]) - 1) - data[level][::-1].index(True) 
+        for i in range(len(data[level])):
+            if data[level][i]:
+                data[level][i] = getNode(binaryFile, level+1, data, i == lastInNextLevel)
+                
+    
+    
+    return n
+    
+    
 
 
 def joinHRC(iHRCFileAbsPath1, iHRCFileAbsPath2, oHRCFileAbsPath):   
@@ -57,21 +72,49 @@ def joinData(d1, d1, hierarchyStepSize, parentNode):
     # when level is higher multiple of stepsize call joinData iteratively to go deep in the tree (add check to see if it is necessay to go deep or we can copy) 
     return result
 
-def joinOctTrees(octTree1AbsPath, octTree2AbsPath):
+def createCloudJS(inputFolderA, inputFolderB, outputFolder):
     result = False # Is the data properly merged
     
-    cloudJS1 = octTree1AbsPath + '/cloud.js'
-    cloudJS2 = octTree2AbsPath + '/cloud.js'
+    cloudJSA = inputFolderA + '/cloud.js'
+    cloudJSB = inputFolderB + '/cloud.js'
     
-    #Check cloud.js files
-    sameCloudJS = filecmp.cmp(cloudJS1, cloudJS2)
+    cloudJSO = outputFolder + '/cloud.js'
     
-    hierarchyStepSize = json.loads(open(cloudJS1, 'r').read())['hierarchyStepSize']
+    if not (os.path.isfile(cloudJSA)) or not (os.path.isfile(cloudJSB)):
+        raise Exception('Error: Some cloud.js is missing!')  
+    
+    cloudJSDataA = json.loads(open(cloudJSA, 'r').read())
+    cloudJSDataB = json.loads(open(cloudJSB, 'r').read())
+    
+    cloudJSDataO = {}
+    # Compare fields in the input cloud.js's that should be equal
+    # We also write the fields in the output cloud.js
+    for equalField in ["version", "octreeDir", "boundingBox", "pointAttributes", "spacing", "scale", "hierarchyStepSize"]:    
+        if cloudJSDataA[equalField] == cloudJSDataB[equalField]:
+             cloudJSDataO[equalField] = cloudJSDataA[equalField]
+        else:
+            raise Exception('Error: Can not join cloud.js. Distinct ' + equalField + '!')
+    
+    # For the field "tightBoundingBox" we need to merge them since they can be different
+    tbbA = cloudJSDataA["tightBoundingBox"]
+    tbbB = cloudJSDataB["tightBoundingBox"]
+    
+    tbbO = {}
+    tbbO["lx"] = min([tbbA["lx"], tbbB["lx"]])
+    tbbO["ly"] = min([tbbA["ly"], tbbB["ly"]])
+    tbbO["lz"] = min([tbbA["lz"], tbbB["lz"]])
+    tbbO["ux"] = max([tbbA["ux"], tbbB["ux"]])
+    tbbO["uy"] = max([tbbA["uy"], tbbB["uy"]])
+    tbbO["uz"] = max([tbbA["uz"], tbbB["uz"]])
+    cloudJSDataO["tightBoundingBox"] = tbbO
+    
+    hierarchyStepSize = cloudJSDataA['hierarchyStepSize']
+    
+    cloudJSOFile = open(cloudJSO, 'w')
+    cloudJSOFile.write(json.dumps(cloudJSDataO))
+    cloudJSOFile.close()
      
-    if sameCloudJS:
-        # Check the data folder
-        result = joinData(octTree1AbsPath + '/data/r', octTree2AbsPath + '/data/r', hierarchyStepSize, 'r') 
-    return result
+    return hierarchyStepSize
 
 def runProcess(processIndex, tasksQueue, resultsQueue):
     kill_received = False
@@ -91,12 +134,28 @@ def runProcess(processIndex, tasksQueue, resultsQueue):
             result = joinOctTrees(octtree1, octtree2)
             resultsQueue.put((processIndex, octtree1, octtree2, result)) 
 
-def run(inputFolder, numberProcs):
+def run(inputFolderA, inputFolderB, outputFolder, numberProcs):
     # Check input parameters
-    if not os.path.isdir(inputFolder):
+    if (not os.path.isdir(inputFolderA)) or (not os.path.isdir(inputFolderB)):
         raise Exception('Error: Input folder does not exist!')
+    if os.path.isfile(outputFolder):
+        raise Exception('Error: There is a file with the same name as the output folder. Please, delete it!')
+    elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
+        raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
+    
     # Make it absolute path
-    inputFolder = os.path.abspath(inputFolder)
+    inputFolderA = os.path.abspath(inputFolderA)
+    inputFolderB = os.path.abspath(inputFolderB)
+
+    os.system('mkdir -p ' + outputFolder)
+    os.system('mkdir -p ' + outputFolder + '/data')
+
+    # Let's create the output cloud.js
+    hierarchyStepSize = createCloudJS(inputFolderA, inputFolderB, outputFolder)
+    
+    data = {}
+    
+    hr1 = getNode(open(hrcFileAbsPath, "rb"), 0, data, True)
 
     # List input octrees
     # We do iterations of joining processes
@@ -108,13 +167,15 @@ def run(inputFolder, numberProcs):
 
 if __name__ == "__main__":
     args = argument_parser().parse_args()
-    print 'Input folder: ', args.input
+    print 'Input Potree Octtree A: ', args.inputa
+    print 'Input Potree Octtree B: ', args.inputb
+    print 'Output Potree Octtree: ', args.output
     print 'Number of processes: ', args.proc
     
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.proc)
+        run(args.inputa, args.inputb, args.output, args.proc)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
