@@ -40,6 +40,9 @@ public class LazResource extends AbstractResource {
         } catch (TooManyPoints tooManyPoints) {
             throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
         }
+        if (request.getLevel() > size.getLevel()) {
+            throw new WebApplicationException("Too many points requested", Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode());
+        }
 
         // Submit as Xenon job
         JobDescription description = new JobDescription();
