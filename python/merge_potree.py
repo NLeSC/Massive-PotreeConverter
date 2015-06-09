@@ -22,7 +22,7 @@ def argument_parser():
 
 def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
     # Read a node from the binary file 
-    b = struct.unpack('b', binaryFile.read(1))[0]
+    b = struct.unpack('B', binaryFile.read(1))[0]
     n = struct.unpack('i', binaryFile.read(4))[0]
     
     if level < (hierarchyStepSize+2):
@@ -59,9 +59,9 @@ def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
                 m = data[i+1][OCTTREE_NODE_NUM_CHILDREN*j:OCTTREE_NODE_NUM_CHILDREN*(j+1)]
                 mask= 0
                 for k in range(OCTTREE_NODE_NUM_CHILDREN):
-                    if m[k]:
+                    if k < len(m) and m[k]:
                         mask += 1<<k
-                oFile.write(struct.pack('b', mask) + struct.pack('i', data[i][j]))
+                oFile.write(struct.pack('B', mask) + struct.pack('i', data[i][j]))
     oFile.close()
     
 def getName(level, i, parentName, hierarchyStepSize, extension):
@@ -76,20 +76,6 @@ def getName(level, i, parentName, hierarchyStepSize, extension):
             return (name_sub, False)
     else:
         return (parentName + '.' + extension, True)
-
-def getNames(parentName, data, hierarchyStepSize, extension):
-    fileNames = []
-    folderNames = []
-    for level in range(hierarchyStepSize+1):
-        for i in range(len(data[level])):
-            if data[level][i]:
-                (name, isFile) = getName(level, i, parentName, hierarchyStepSize, extension)
-                if isFile:
-                    fileNames.append(name)
-                else:
-                    folderNames.append(name)
-    return (fileNames, folderNames)
-                
     
 def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, extension, cmcommand):
     hrcFile = node + '.hrc'
@@ -116,7 +102,7 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
                     hasNodeA = (i < numChildrenA) and (hrcA[level][i] > 0)
                     hasNodeB = (i < numChildrenB) and (hrcB[level][i] > 0)
                     
-                    (childNode, isFile) = getName(level, i, node, extension)
+                    (childNode, isFile) = getName(level, i, node, hierarchyStepSize, extension)
                     if hasNodeA and hasNodeB:
                         hrcO[level].append(hrcA[level][i] + hrcB[level][i])
                         #merge lAZ or folder (iteratively)
@@ -242,7 +228,7 @@ if __name__ == "__main__":
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.inputa, args.inputb, args.output, args.proc)
+        run(args.inputa, args.inputb, args.output, args.move)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
