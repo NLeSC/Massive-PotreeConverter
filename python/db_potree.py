@@ -1,16 +1,17 @@
 #!/usr/bin/env python
-"""Updates a level of the DB"""
+"""Updates/Creates a DB with the 2D extent information of the files in an Octtree.
+If level is not specified it is automatically detected from each file name"""
 
 import argparse, traceback, time, os, math, multiprocessing, psycopg2
-from pointcloud import lasops, utils, postgresops
+import utils
 
 USERNAME = utils.getUserName()
-
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
-    description="Create a folder structure with the data spatially sorted in XY tiles")
+    description="""Updates/Creates a DB with the 2D extent information of the files in an Octtree.
+If level is not specified it is automatically detected from each file name""")
     parser.add_argument('-i','--input',default='',help='Input folder with the tiles',type=str, required=True)
     parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-l','--level',default=-1,help='If provided all files are assigned to such level. If not provided the level is obtained from the filename (if level is provided the previous files with same level are dropped from the DB if the table was already created)',type=int)
@@ -32,10 +33,10 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, dbTable
     
     kill_received = False
     while not kill_received:
-        tileAbsPath = None
+        fileAbsPath = None
         try:
             # This call will patiently wait until new job is available
-            tileAbsPath = tasksQueue.get()
+            fileAbsPath = tasksQueue.get()
         except:
             # if there is an error we will quit
             kill_received = True
@@ -43,19 +44,18 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, dbTable
             # If we receive a None job, it means we can stop
             kill_received = True
         else:            
-            for fileAbsPath in utils.getFiles(tileAbsPath):
-                (_, count, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = lasops.getPCFileDetails(fileAbsPath)
-                insertStatement = """INSERT INTO """ + dbTable + """(filepath,tile,level,numberpoints,geom) VALUES (%s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
-                if not fixedLevel:
-                    level = len(os.path.basename(fileAbsPath)) - 5
-                insertArgs = [fileAbsPath, os.path.basename(tileAbsPath), level, int(count), float(minX), float(minY), float(maxX), float(maxY), int(srid)]
-                cursor.execute(insertStatement, insertArgs)
-            resultsQueue.put((processIndex, tileAbsPath))
+            (_, count, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(fileAbsPath)
+            insertStatement = """INSERT INTO """ + dbTable + """(filepath,level,numberpoints,geom) VALUES (%s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
+            if not fixedLevel:
+                level = len(os.path.basename(fileAbsPath)) - 5
+            insertArgs = [fileAbsPath, level, int(count), float(minX), float(minY), float(maxX), float(maxY), int(srid)]
+            cursor.execute(insertStatement, insertArgs)
+            resultsQueue.put((processIndex, fileAbsPath))
     connection.close()
 
 def run(inputFolder, srid, level, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numberProcs):
     # Make connection
-    connectionString = postgresops.getConnectString(dbName, dbUser, dbPass, dbHost, dbPort)
+    connectionString = utils.getConnectString(dbName, dbUser, dbPass, dbHost, dbPort)
     connection = psycopg2.connect(connectionString)
     cursor = connection.cursor()
     
@@ -63,7 +63,7 @@ def run(inputFolder, srid, level, dbName, dbTable, dbPass, dbUser, dbHost, dbPor
     inputFolder = os.path.abspath(inputFolder)
     
     # Create table if it does not exist
-    cursor.execute('CREATE TABLE ' + dbTable + ' IF NOT EXISTS (filepath text, tile text, level integer, numberpoints integer, geom public.geometry(Geometry, %s)))', [srid, ])
+    cursor.execute('CREATE TABLE ' + dbTable + ' IF NOT EXISTS (filepath text, level integer, numberpoints integer, geom public.geometry(Geometry, %s)))', [srid, ])
     connection.commit()
     
     # Delete previous entries related to this level
@@ -72,17 +72,16 @@ def run(inputFolder, srid, level, dbName, dbTable, dbPass, dbUser, dbHost, dbPor
     connection.commit()
     connection.close()
     
-    
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
     
-    tilesNames = os.listdir(inputFolder)
-    numTiles = len(tilesNames)
+    inputFiles = utils.getFiles(inputFolder, recursive=True)
+    numFiles = len(inputFiles)
     
     # Add tasks/inputFiles
-    for i in range(numTiles):
-        tasksQueue.put(inputFolder + '/' + tilesNames[i])
+    for i in range(numFiles):
+        tasksQueue.put(inputFiles[i])
     for i in range(numberProcs): #we add as many None jobs as numberProcs to tell them to terminate (queue is FIFO)
         tasksQueue.put(None)
 
@@ -94,9 +93,9 @@ def run(inputFolder, srid, level, dbName, dbTable, dbPass, dbUser, dbHost, dbPor
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
-    for i in range(numTiles):
+    for i in range(numFiles):
         resultsQueue.get()
-        print 'Completed %d of %d (%.02f%%)' % (i+1, numTiles, 100. * float(i+1) / float(numTiles))
+        print 'Completed %d of %d (%.02f%%)' % (i+1, numFiles, 100. * float(i+1) / float(numFiles))
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """This script generate for each tile a WKT with BBOX of the contained files"""
 import os, argparse, traceback, time, multiprocessing
-from pointcloud import lasops
+import utils
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
@@ -11,7 +11,6 @@ def argument_parser():
     parser.add_argument('-o','--output',default='',help='Output folder to dump the WKT files',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
-
 
 def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder):
     kill_received = False
@@ -29,7 +28,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder):
         else:
             tFile = open(outputFolder + '/' + os.path.basename(tileAbsPath) + '.wkt', 'w')
             for tilefile in os.listdir(tileAbsPath):
-                (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(tileAbsPath + '/' + tilefile)
+                (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tileAbsPath + '/' + tilefile)
                 tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (fMinX, fMaxY, fMinX, fMinY, fMaxX, fMinY, fMaxX, fMaxY, fMinX, fMaxY))
             tFile.close()
             resultsQueue.put((processIndex, tileAbsPath)) 
@@ -74,14 +73,6 @@ def run(inputFolder, outputFolder, numberProcs):
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
-        
-    
-    for tile in os.listdir(inputFolder):
-        tFile = open(outputFolder + '/' + tile + '.wkt', 'w')
-        for tilefile in os.listdir(inputFolder + '/' + tile):
-            (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFolder + '/' + tile + '/' + tilefile)
-            tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (fMinX, fMaxY, fMinX, fMinY, fMaxX, fMinY, fMaxX, fMaxY, fMinX, fMaxY))
-        tFile.close()
 
 if __name__ == "__main__":
     args = argument_parser().parse_args()

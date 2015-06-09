@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 """Create a the overview Octtree from the Octtree data of the tiles"""
-
 import argparse, traceback, time, os
+import utils
 
+# Check that PotreeConverter with extension to specify the AABB is installed
+if utils.shellExecute('PotreeConverter -h').count('usage: ') == 0:
+    raise Exception("PotreeConverter is not installed")
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
@@ -16,7 +19,6 @@ def argument_parser():
     parser.add_argument('-e','--olevels',default='',help='Number of levels for the overview OctTree',type=int, required=True)
     parser.add_argument('-s','--spacing',default='',help='Spacing at root level',type=int, required=True)
     return parser
-
 
 def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing):
     # Check input parameters
@@ -46,7 +48,6 @@ def run(inputFolder, outputFolder, tempFolder, iLevels, format, oLevels, spacing
             for f in os.listdir(dataAbsPath):
                 if 'la' in f and ((len(f) - 5) <= iLevels):
                     os.system('ln -s ' + dataAbsPath + '/' + f + ' ' + tempFolder + '/' + tilesNames[i] + '_' + f)
-    
     
     c = 'PotreeConverter -o ' + outputFolder +  ' -l ' + str(oLevels) + ' --output-format ' + str(format).upper() + ' --source ' + tempFolder + ' -s ' + str(spacing) + ' &> ' + outputFolder + '.log'
     print c

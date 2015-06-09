@@ -1,19 +1,29 @@
 #!/usr/bin/env python
-"""This script is used to distribute the points of a bunch of LAS/LAZ files in different tiles
+"""
+This script is used to distribute the points of a bunch of LAS/LAZ files in 
+different tiles, the different tiles match the XY extent of the 
+nodes of a certain level of a Octtree (depending on specified number of tiles)
+defiend by the provided bounding box 
 """
 
 import argparse, traceback, time, os, math, multiprocessing, json
-from pointcloud import lasops
+import utils
 
-ONLY_SHOW = False
+# Check the LAStools is installed and that it is in the PATH before libLAS
+if utils.shellExecute('pdal grid --version').count('pdal grid') == 0:
+    raise Exception("PDAL grid is not installed. Be sure to have PDAL installed from https://github.com/oscarmartinezrubi/PDAL")
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
-    description="Create a folder structure with the data spatially sorted in XY tiles")
+    description="""This script is used to distribute the points of a bunch of LAS/LAZ files in 
+different tiles, the different tiles match the XY extent of the 
+nodes of a certain level of a Octtree (depending on specified number of tiles)
+defiend by the provided bounding box""")
     parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
     parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
+    parser.add_argument('-e','--extent',default='',help='Extent to be used for the tiling, specify as minX,minY,maxX,maxY',type=str, required=True)
     parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
     parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
@@ -30,11 +40,6 @@ def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
 def getTileName(xIndex, yIndex):
     return 'tile_%d_%d' % (int(xIndex), int(yIndex))
 
-def executeCommand(command):
-    print command
-    if not ONLY_SHOW:
-        os.system(command)
-
 def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
     kill_received = False
     while not kill_received:
@@ -50,7 +55,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
             kill_received = True
         else:            
             # Get number of points and BBOX of this file
-            (_, fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(inputFile)
+            (_, fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
             print 'Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY
             # For the four vertices of the BBOX we get in which tile they should go
             posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
@@ -60,30 +65,30 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
 
             if (posMinXMinY == posMinXMaxY) and (posMinXMinY == posMaxXMinY) and (posMinXMinY == posMaxXMaxY):
                 # If they are the same the whole file can be directly copied to the tile
-                executeCommand('cp ' + inputFile + ' ' + outputFolder + '/' + getTileName(*posMinXMinY))
+                utils.shellExecute('cp ' + inputFile + ' ' + outputFolder + '/' + getTileName(*posMinXMinY))
             else:
                 # If not, we run PDAL gridder to split the file in pieces that can go to the tiles
                 tGCount = runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
                 if tGCount != fCount:
                     print 'WARNING: gridded version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')'
-            resultsQueue.put((processIndex, inputFile))   
+            resultsQueue.put((processIndex, inputFile, fCount))   
 
 def runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
     pTempFolder = tempFolder + '/' + str(processIndex)
     if not os.path.isdir(pTempFolder):
-        executeCommand('mkdir -p ' + pTempFolder)
-    executeCommand('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
+        utils.shellExecute('mkdir -p ' + pTempFolder)
+    utils.shellExecute('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
-        (_, gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = lasops.getPCFileDetails(pTempFolder + '/' + gFile)
+        (_, gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
         # This tile should match with some tile. Let's use the central point to see which one
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
-        executeCommand('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY)) + '/' + gFile)
+        utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY)) + '/' + gFile)
         tGCount += gCount
     return tGCount
     
-def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
+def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs):
     # Check input parameters
     if not os.path.isdir(inputFolder) and not os.path.isfile(inputFolder):
         raise Exception('Error: Input folder does not exist!')
@@ -98,19 +103,24 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
     axisTiles = int(axisTiles)
     
     # Create output and temporal folder
-    executeCommand('mkdir -p ' + outputFolder)
-    executeCommand('mkdir -p ' + tempFolder)
+    utils.shellExecute('mkdir -p ' + outputFolder)
+    utils.shellExecute('mkdir -p ' + tempFolder)
     
     # Get the global extent and the as well as number of points and input files
     print 'Collecting information about the input data...'
-    (inputFiles, _, numPoints, minX, minY, _, maxX, maxY, _, scaleX, scaleY, _) = lasops.getPCFolderDetails(inputFolder, numProc = numberProcs)
+    (minX, minY, maxX, maxY) = extent.split(',')
+    minX = float(minX)
+    minY = float(minY)
+    maxX = float(maxX)
+    maxY = float(maxY)
+    inputFiles = utils.getFiles(inputFolder, recursive=True)
     numInputFiles = len(inputFiles)
-    print '%s contains %d files with %d points. The XY extent is %.2f, %.2f, %.2f, %.2f' % (inputFolder, numInputFiles, numPoints, minX, minY, maxX, maxY)
+    print '%s contains %d files' % (inputFolder, numInputFiles)
     
     # Generate the output folder for the tiles
     for xIndex in range(axisTiles):
         for yIndex in range(axisTiles):
-            executeCommand('mkdir -p ' + outputFolder + '/' + getTileName(xIndex, yIndex))
+            utils.shellExecute('mkdir -p ' + outputFolder + '/' + getTileName(xIndex, yIndex))
 
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
@@ -130,32 +140,19 @@ def run(inputFolder, outputFolder, tempFolder, numberTiles, numberProcs):
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
+    numPoints = 0
     for i in range(numInputFiles):
-        resultsQueue.get()
+        (processIndex, inputFile, inputFileNumPoints) = resultsQueue.get()
+        numPoints += inputFileNumPoints
         print 'Completed %d of %d (%.02f%%)' % (i+1, numInputFiles, 100. * float(i+1) / float(numInputFiles))
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
-                
-    # Check that the number of points after tiling is the same as initial
-#    numPointsTiles = 0
-#    numFilesTiles = 0
-#    for xIndex in range(axisTiles):
-#        for yIndex in range(axisTiles):
-#            (tInputFiles, _, tNumPoints, _, _, _, _, _, _, _, _, _) = lasops.getPCFolderDetails(outputFolder + '/' + getTileName(xIndex, yIndex))
-#            numPointsTiles += tNumPoints
-#            numFilesTiles += len(tInputFiles)
-        
-#    if numPointsTiles != numPoints:
-#        print 'WARNING: #input_points = %d   #output_points = %d' % (numPoints, numPointsTiles)
-#    else:
-#        print '#input_points = #output_points = %d' % numPointsTiles
-#    print '#input_files = %d   #output_files = %d' % (numInputFiles, numFilesTiles)
     
     # Write the tile.js file with information about the tiles
     cFile = open(outputFolder + '/tiles.js', 'w')
     d = {}
-    d["numberPoints"] = numPoints
+    d["NumberPoints"] = numPoints
     d["numXTiles"] = axisTiles
     d["numYTiles"] = axisTiles
     d["boundingBox"] = {'lx':minX,'ly':minY,'ux':maxX,'uy':maxY}
@@ -168,13 +165,14 @@ if __name__ == "__main__":
     print 'Input folder: ', args.input
     print 'Output folder: ', args.output
     print 'Temporal folder: ', args.temp
+    print 'Extent: ', args.extent
     print 'Number of tiles: ', args.number
     print 'Number of processes: ', args.proc
     
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.output, args.temp, args.number, args.proc)
+        run(args.input, args.output, args.temp, args.extent, args.number, args.proc)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'

@@ -2,6 +2,11 @@
 """Create the OctTrees of each tile of the input data folder"""
 
 import argparse, traceback, time, os, multiprocessing
+import utils
+
+# Check that PotreeConverter with extension to specify the AABB is installed
+if utils.shellExecute('PotreeConverter -h').count('--aabb') == 0:
+    raise Exception("PotreeConverter with extension to specify the AABB is not installed. Be sure to have PotreeConverter installed from https://github.com/oscarmartinezrubi/PotreeConverter")
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
@@ -33,8 +38,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, lev
             tileOutputFolder = outputFolder + '/' + os.path.basename(tileAbsPath)
             os.system('mkdir -p ' + tileOutputFolder)
             c = 'PotreeConverter --outdir ' + tileOutputFolder +  ' --levels ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' --spacing ' + str(spacing) + ' --aabb ' + (' '.join(extent.split(','))) + ' &> ' + tileOutputFolder + '.log'
-            print c
-            os.system(c)
+            utils.shellExecute(c, True)
             resultsQueue.put((processIndex, tileAbsPath)) 
 
 def run(inputFolder, outputFolder, format, levels, spacing, extent, numberProcs):
@@ -49,7 +53,7 @@ def run(inputFolder, outputFolder, format, levels, spacing, extent, numberProcs)
     # Make it absolute path
     inputFolder = os.path.abspath(inputFolder)
 
-    os.system('mkdir -p ' + outputFolder)
+    utils.shellExecute('mkdir -p ' + outputFolder)
 
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
@@ -58,7 +62,7 @@ def run(inputFolder, outputFolder, format, levels, spacing, extent, numberProcs)
     tilesNames = os.listdir(inputFolder)
     if 'tiles.js' in tilesNames:
         tilesNames.remove('tiles.js')
-        os.system('cp ' + inputFolder + '/tiles.js ' + outputFolder+ '/tiles.js')
+        utils.shellExecute('cp ' + inputFolder + '/tiles.js ' + outputFolder+ '/tiles.js')
     
     numTiles = len(tilesNames)
     
