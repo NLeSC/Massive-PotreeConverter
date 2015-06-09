@@ -43,4 +43,14 @@ export LIBRARY_PATH=$GDAL_HOME/lib:$BOOST_HOME/lib:$LASZIP_HOME/lib:$LIBLAS_HOME
 export C_INCLUDE_PATH=$LIBLAS_HOME/include/liblas/capi:${C_INCLUDE_PATH}
 export LDFLAGS="${LDFLAGS} -L$GDAL_HOME/lib -L$BOOST_HOME/lib -L$LIBLAS_HOME/lib -L$LASZIP_HOME/lib -llas_c -llaszip"
 
-4 - Current version may not be compiling (it does not at date 25/05/2015). There is some issue with fstream that can be fixed using the branch fix_fstream as proposed before. If you get this message be sure that you used this branch
+4 - If you get linking compiler of undefined reference to `boost::filesystem::detail::copy_file:
+
+Add in PotreeConverter/include/stuff.h the following line just before #include <boost/filesystem.hpp>
+ #define BOOST_NO_CXX11_SCOPED_ENUMS
+
+5 - It need a new compiler. Once installed use the following option in cmake (chaning the paths according to your installation):
+ -DCMAKE_CXX_COMPILER=/cm/shared/package/gcc/4.9.0/bin/c++ -DCMAKE_C_COMPILER=/cm/shared/package/gcc/4.9.0/bin/gcc -DCMAKE_LINKER=/cm/shared/package/gcc/4.9.0/bin/ld -DCMAKE_NM=/cm/shared/package/gcc/4.9.0/bin/nm -DCMAKE_OBJCOPY=/cm/shared/package/gcc/4.9.0/bin/objcopy -DCMAKE_OBJDUMP=/cm/shared/package/gcc/4.9.0/bin/objdump -DCMAKE_RANLIB=/cm/shared/package/gcc/4.9.0/bin/ranlib -DCMAKE_STRIP=/cm/shared/package/gcc/4.9.0/bin/strip
+
+5 - Current version may not be compiling (it does not at date 25/05/2015). There is some issue with fstream that can be fixed using the branch fix_fstream as proposed before. If you get this message be sure that you used this branch
+
+ 
