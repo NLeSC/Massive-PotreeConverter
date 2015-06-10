@@ -2,6 +2,7 @@
 """Merge two Potree OctTrees into a single one."""
 
 import argparse, traceback, time, os, struct, json, numpy, math, subprocess
+from liblas import file
 import utils
 
 # Check the LAStools is installed and that it is in the PATH before libLAS
@@ -76,7 +77,32 @@ def getName(level, i, parentName, hierarchyStepSize, extension):
             return (name_sub, False)
     else:
         return (parentName + '.' + extension, True)
-    
+
+def fixHeader(inputFile, outputFile):
+    # get correct min/max
+#    f = file.File(inputFile, mode='r')
+#    minInput = f.header.min
+#    maxInput = f.header.max
+#    f.close()
+
+    # get header of merge laz file
+#    f = file.File(outputFile, mode='r')
+#    header = f.header
+#    f.close()
+
+    # set min/max
+#    header.min = minInput
+#    header.max = maxInput
+
+    # write header
+#    f = file.File(outputFile, mode='w+', header=header)
+#    f.close()
+
+#    # the same with LAStools
+    (_, _, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
+    utils.shellExecute('lasinfo -i %s -nc -nv -nco -set_bounding_box %f %f %f %f %f %f' % (outputFile, minX, minY, minZ, maxX, maxY, maxZ))
+
+
 def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, extension, cmcommand):
     hrcFile = node + '.hrc'
     hrcA = None
@@ -108,6 +134,8 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
                         #merge lAZ or folder (iteratively)
                         if isFile:
                             utils.shellExecute('lasmerge -i ' +  nodeAbsPathA + '/' + childNode + ' ' +  nodeAbsPathB + '/' + childNode + ' -o ' + nodeAbsPathO + '/' + childNode)
+                            #We now need to set the header of the output file as the input files (lasmerge will have shrink it and we do not want that
+                            fixHeader(nodeAbsPathA + '/' + childNode, nodeAbsPathO + '/' + childNode)
                         else:
                             joinNode(node + childNode, nodeAbsPathA + '/' + childNode, nodeAbsPathB + '/' + childNode, nodeAbsPathO + '/' + childNode, hierarchyStepSize, extension, cmcommand)
                     elif hasNodeA:
