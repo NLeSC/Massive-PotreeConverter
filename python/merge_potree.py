@@ -23,7 +23,7 @@ def argument_parser():
 def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
     # Read a node from the binary file 
     b = struct.unpack('B', binaryFile.read(1))[0]
-    n = struct.unpack('i', binaryFile.read(4))[0]
+    n = struct.unpack('I', binaryFile.read(4))[0]
     
     if level < (hierarchyStepSize+2):
         for i in range(OCTTREE_NODE_NUM_CHILDREN):
@@ -61,7 +61,7 @@ def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
                 for k in range(OCTTREE_NODE_NUM_CHILDREN):
                     if k < len(m) and m[k]:
                         mask += 1<<k
-                oFile.write(struct.pack('B', mask) + struct.pack('i', data[i][j]))
+                oFile.write(struct.pack('B', mask) + struct.pack('I', data[i][j]))
     oFile.close()
     
 def getName(level, i, parentName, hierarchyStepSize, extension):
