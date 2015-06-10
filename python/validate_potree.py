@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Validates that the HRC files are correct in a Potree Octtree"""
 
-import argparse, traceback, time, os, multiprocessing
+import argparse, traceback, time, os, multiprocessing, json
 import utils, merge_potree
 
 def argument_parser():
@@ -11,12 +11,12 @@ def argument_parser():
     parser.add_argument('-i','--input',default='',help='Input folder with the Potree Octtree',type=str, required=True)
     return parser
 
-def getNames(node, hierarchyStepSize, extension):
+def getNames(node, hierarchyStepSize, data, extension):
     names = []
     for level in range(hierarchyStepSize+2):
         if level < (hierarchyStepSize+1):
-            for i in range(len(d[level])):
-                if d[level][i]:
+            for i in range(len(data[level])):
+                if data[level][i]:
                     names.append(merge_potree.getName(level, i, node, hierarchyStepSize, extension)[0])
     return names
 
@@ -27,15 +27,23 @@ def validateNode(node, nodeAbsPath, hierarchyStepSize, extension):
     if not os.path.isfile(nodeAbsPath + '/' + hrcFile):
         # Check if there is data in this node in Octtree A (we check if the HRC file for this node exist)
         raise Exception(nodeAbsPath + '/' + hrcFile + ' could not be read')
-    hrc = readHRC(nodeAbsPath + '/' + hrcFile, hierarchyStepSize)
-    nodes = getNames(node, hierarchyStepSize, extension)
-    elements = os.listdir(nodeAbsPath)
-    if nodes != elements:
-        raise Exception(node + ' in ' + nodeAbsPath + ' is not correct')
-    for element in elements:
-        if element.count(extension) == 0:
-            validateNode(node + element, nodeAbsPath + '/' + element, hierarchyStepSize, extension)
-
+    hrc = merge_potree.readHRC(nodeAbsPath + '/' + hrcFile, hierarchyStepSize)
+    for level in range(hierarchyStepSize+1):
+        hrcLevel = hrc[level]
+        for i in range(len(hrcLevel)):
+            hrcNumPoints = hrcLevel[i]
+            if hrcNumPoints:
+                (childNode, isFile) = merge_potree.getName(level, i, node, hierarchyStepSize, extension)
+                childNodeAbsPath = nodeAbsPath + '/' + childNode
+                if not os.path.exists(childNodeAbsPath):
+                    print 'Error: could not find ', childNodeAbsPath
+                    raise Exception(node + ' in ' + nodeAbsPath + ' is not correct')
+                if isFile:
+                    fNumPoints = utils.getPCFileDetails(childNodeAbsPath)[1] 
+                    if hrcNumPoints != fNumPoints:
+                        print 'Error: number of points in HRC (' + str(hrcNumPoints) + ') != number of points in file (' + str(fNumPoints) + ') in ' + childNodeAbsPath
+                else:
+                    validateNode(node + childNode, childNodeAbsPath, hierarchyStepSize, extension)
 
 def run(inputFolder):
     inputFolderElements = os.listdir(inputFolder)
