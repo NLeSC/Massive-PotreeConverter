@@ -160,7 +160,7 @@ def createCloudJS(cloudJSA, cloudJSB, cloudJSO):
     hierarchyStepSize = cloudJSDataA['hierarchyStepSize']
     
     cloudJSOFile = open(cloudJSO, 'w')
-    cloudJSOFile.write(json.dumps(cloudJSDataO))
+    cloudJSOFile.write(json.dumps(cloudJSDataO, indent=4))
     cloudJSOFile.close()
      
     return hierarchyStepSize

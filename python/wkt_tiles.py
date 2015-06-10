@@ -10,9 +10,10 @@ def argument_parser():
     parser.add_argument('-i','--input',default='',help='Input folder with the tiles',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output folder to dump the WKT files',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
+    parser.add_argument('-a','--approx',help='Only outputs one a BBOX per tile instead of a BBOX per file in tile. [default False]',default=False,action='store_true')
     return parser
 
-def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder):
+def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, useApprox):
     kill_received = False
     while not kill_received:
         tileAbsPath = None
@@ -27,13 +28,26 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder):
             kill_received = True
         else:
             tFile = open(outputFolder + '/' + os.path.basename(tileAbsPath) + '.wkt', 'w')
+            (tMinX,tMinY,tMaxX,tMaxY) = (None, None, None, None)
             for tilefile in os.listdir(tileAbsPath):
                 (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tileAbsPath + '/' + tilefile)
-                tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (fMinX, fMaxY, fMinX, fMinY, fMaxX, fMinY, fMaxX, fMaxY, fMinX, fMaxY))
+                if useApprox:
+                    if tMinX == None or tMinX > fMinX:
+                        tMinX = fMinX
+                    if tMinY == None or tMinY > fMinY:
+                        tMinY = fMinY
+                    if tMaxX == None or tMaxX < fMaxX:
+                        tMaxX = fMaxX
+                    if tMaxY == None or tMaxY < fMaxY:
+                        tMaxY = fMaxY
+                else:
+                    tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (fMinX, fMaxY, fMinX, fMinY, fMaxX, fMinY, fMaxX, fMaxY, fMinX, fMaxY))
+            if useApprox and tMinX != None:
+                tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (tMinX, tMaxY, tMinX, tMinY, tMaxX, tMinY, tMaxX, tMaxY, tMinX, tMaxY))
             tFile.close()
             resultsQueue.put((processIndex, tileAbsPath)) 
 
-def run(inputFolder, outputFolder, numberProcs):
+def run(inputFolder, outputFolder, numberProcs, useApprox):
     # Check input parameters
     if not os.path.isdir(inputFolder):
         raise Exception('Error: Input folder does not exist!')
@@ -63,7 +77,7 @@ def run(inputFolder, outputFolder, numberProcs):
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, outputFolder)))
+            args=(i, tasksQueue, resultsQueue, outputFolder, useApprox)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
@@ -79,11 +93,11 @@ if __name__ == "__main__":
     print 'Input folder: ', args.input
     print 'Output folder: ', args.output
     print 'Number of processes: ', args.proc
-    
+    print 'Approximation: ', args.approx
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.output, args.proc)
+        run(args.input, args.output, args.proc, args.approx)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
