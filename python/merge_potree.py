@@ -26,19 +26,18 @@ def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
     b = struct.unpack('B', binaryFile.read(1))[0]
     n = struct.unpack('I', binaryFile.read(4))[0]
     
-    if level < (hierarchyStepSize+2):
-        for i in range(OCTTREE_NODE_NUM_CHILDREN):
-            # We will store a positive number if the child i exists, 0 otherwise
-            data[level].append((1<<i) & b)
-        
-        if lastInLevel and level < (hierarchyStepSize+1): # If we have finished with current level and not in last level we go one more level deep
-            if sum(data[level]):
-                lastInNextLevel = (len(data[level]) - 1) - list(numpy.array(data[level]) > 0)[::-1].index(True) # We get the index of the last node in the next level which has data
-                for j in range(lastInNextLevel + 1): # For all the nodes until the one with data, we read the node in the next level
-                    if data[level][j]:
-                        data[level][j] = getNode(binaryFile, level+1, data, j == lastInNextLevel, hierarchyStepSize)
-                    else:
-                        data[level+1].extend([0] * OCTTREE_NODE_NUM_CHILDREN) # If there is no data we still fill 0s to have consistent trees
+    for i in range(OCTTREE_NODE_NUM_CHILDREN):
+        # We will store a positive number if the child i exists, 0 otherwise
+        data[level].append((1<<i) & b)
+    
+    if lastInLevel and level < (hierarchyStepSize+1): # If we have finished with current level and not in last level we go one more level deep
+        if sum(data[level]):
+            lastInNextLevel = (len(data[level]) - 1) - list(numpy.array(data[level]) > 0)[::-1].index(True) # We get the index of the last node in the next level which has data
+            for j in range(lastInNextLevel + 1): # For all the nodes until the one with data, we read the node in the next level
+                if data[level][j]:
+                    data[level][j] = getNode(binaryFile, level+1, data, j == lastInNextLevel, hierarchyStepSize)
+                else:
+                    data[level+1].extend([0] * OCTTREE_NODE_NUM_CHILDREN) # If there is no data we still fill 0s to have consistent trees
     return n
 
 def initHRC(hierarchyStepSize):
@@ -120,14 +119,13 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
         # If both Octtrees A and B have data in this node we have to merge them
         hrcO = initHRC(hierarchyStepSize)
         for level in range(hierarchyStepSize+2):
+            numChildrenA = len(hrcA[level])
+            numChildrenB = len(hrcB[level])
+            numChildrenO = max((numChildrenA, numChildrenB))
             if level < (hierarchyStepSize+1):
-                numChildrenA = len(hrcA[level])
-                numChildrenB = len(hrcB[level])
-                numChildrenO = max((numChildrenA, numChildrenB))
                 for i in range(numChildrenO):
                     hasNodeA = (i < numChildrenA) and (hrcA[level][i] > 0)
                     hasNodeB = (i < numChildrenB) and (hrcB[level][i] > 0)
-                    
                     (childNode, isFile) = getName(level, i, node, hierarchyStepSize, extension)
                     if hasNodeA and hasNodeB:
                         hrcO[level].append(hrcA[level][i] + hrcB[level][i])
@@ -148,6 +146,8 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
                         utils.shellExecute(cmcommand + nodeAbsPathB + '/' + childNode + ' ' + nodeAbsPathO + '/' + childNode)
                     else:
                         hrcO[level].append(0)
+            else:
+                hrcO[level] = list(numpy.array(hrcA[level] + ([0]*(numChildrenO - numChildrenA))) + numpy.array(hrcB[level] + ([0]*(numChildrenO - numChildrenB))))            
         # Write the HRC file
         writeHRC(nodeAbsPathO + '/' + hrcFile, hierarchyStepSize, hrcO)
     elif hrcA != None:
