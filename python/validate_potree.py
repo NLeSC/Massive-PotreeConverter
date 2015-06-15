@@ -2,7 +2,7 @@
 """Validates that the HRC files are correct in a Potree Octtree"""
 
 import argparse, traceback, time, os, multiprocessing, json
-import utils, merge_potree
+import utils
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
@@ -17,7 +17,7 @@ def getNames(node, hierarchyStepSize, data, extension):
         if level < (hierarchyStepSize+1):
             for i in range(len(data[level])):
                 if data[level][i]:
-                    names.append(merge_potree.getName(level, i, node, hierarchyStepSize, extension)[0])
+                    names.append(utils.getNodeName(level, i, node, hierarchyStepSize, extension)[0])
     return names
 
 
@@ -27,13 +27,13 @@ def validateNode(node, nodeAbsPath, hierarchyStepSize, extension):
     if not os.path.isfile(nodeAbsPath + '/' + hrcFile):
         # Check if there is data in this node in Octtree A (we check if the HRC file for this node exist)
         raise Exception(nodeAbsPath + '/' + hrcFile + ' could not be read')
-    hrc = merge_potree.readHRC(nodeAbsPath + '/' + hrcFile, hierarchyStepSize)
+    hrc = utils.readHRC(nodeAbsPath + '/' + hrcFile, hierarchyStepSize)
     for level in range(hierarchyStepSize+1):
         hrcLevel = hrc[level]
         for i in range(len(hrcLevel)):
             hrcNumPoints = hrcLevel[i]
             if hrcNumPoints:
-                (childNode, isFile) = merge_potree.getName(level, i, node, hierarchyStepSize, extension)
+                (childNode, isFile) = utils.getNodeName(level, i, node, hierarchyStepSize, extension)
                 childNodeAbsPath = nodeAbsPath + '/' + childNode
                 if not os.path.exists(childNodeAbsPath):
                     print 'Error: could not find ', childNodeAbsPath

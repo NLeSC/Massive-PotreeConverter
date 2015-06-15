@@ -9,8 +9,6 @@ import utils
 if utils.shellExecute('lasmerge -version').count('LAStools') == 0:
     raise Exception("LAStools lasmerge is not found!. Please check that it is in PATH and that it is before libLAS binaries")
 
-OCTTREE_NODE_NUM_CHILDREN = 8
-
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
@@ -20,62 +18,6 @@ def argument_parser():
     parser.add_argument('-o','--output',default='',help='Output Potree OctTree',type=str, required=True)
     parser.add_argument('-m','--move',help='Use mv instead of cp when creating the output octtree. In this case the input data is partially dropped (but process may be faster due to less required IO) [default False]',default=False,action='store_true')
     return parser
-
-def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
-    # Read a node from the binary file 
-    b = struct.unpack('B', binaryFile.read(1))[0]
-    n = struct.unpack('I', binaryFile.read(4))[0]
-    
-    for i in range(OCTTREE_NODE_NUM_CHILDREN):
-        # We will store a positive number if the child i exists, 0 otherwise
-        data[level].append((1<<i) & b)
-    
-    if lastInLevel and level < (hierarchyStepSize+1): # If we have finished with current level and not in last level we go one more level deep
-        if sum(data[level]):
-            lastInNextLevel = (len(data[level]) - 1) - list(numpy.array(data[level]) > 0)[::-1].index(True) # We get the index of the last node in the next level which has data
-            for j in range(lastInNextLevel + 1): # For all the nodes until the one with data, we read the node in the next level
-                if data[level][j]:
-                    data[level][j] = getNode(binaryFile, level+1, data, j == lastInNextLevel, hierarchyStepSize)
-                else:
-                    data[level+1].extend([0] * OCTTREE_NODE_NUM_CHILDREN) # If there is no data we still fill 0s to have consistent trees
-    return n
-
-def initHRC(hierarchyStepSize):
-    data = {}
-    for i in range(hierarchyStepSize+2): #In each HRC file we have info about the current level, hierarchyStepSize more, and only existence info in hierarchyStepSize+1, so total of hierarchyStepSize+2
-        data[i] = []
-    return data
-
-def readHRC(hrcFileAbsPath, hierarchyStepSize):
-    data = initHRC(hierarchyStepSize)
-    data[0].append(getNode(open(hrcFileAbsPath, "rb"), 1, data, True, hierarchyStepSize))
-    return data   
-
-def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
-    oFile = open(hrcFileAbsPath, "wb")
-    for i in range(hierarchyStepSize+1):
-        for j in range(len(data[i])):
-            if data[i][j]:
-                m = data[i+1][OCTTREE_NODE_NUM_CHILDREN*j:OCTTREE_NODE_NUM_CHILDREN*(j+1)]
-                mask= 0
-                for k in range(OCTTREE_NODE_NUM_CHILDREN):
-                    if k < len(m) and m[k]:
-                        mask += 1<<k
-                oFile.write(struct.pack('B', mask) + struct.pack('I', data[i][j]))
-    oFile.close()
-    
-def getName(level, i, parentName, hierarchyStepSize, extension):
-    name_sub = ''
-    if level:
-        for l in range(level-1)[::-1]:
-            name_sub += str((i / int(math.pow(OCTTREE_NODE_NUM_CHILDREN,l+1))) % OCTTREE_NODE_NUM_CHILDREN)
-        name_sub += str(i % OCTTREE_NODE_NUM_CHILDREN)
-        if level < hierarchyStepSize:
-            return (parentName + name_sub + '.' + extension, True)
-        else:
-            return (name_sub, False)
-    else:
-        return (parentName + '.' + extension, True)
 
 def fixHeader(inputFile, outputFile):
     # get correct min/max
@@ -107,17 +49,17 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
     hrcA = None
     if os.path.isfile(nodeAbsPathA + '/' + hrcFile):
         # Check if there is data in this node in Octtree A (we check if the HRC file for this node exist)
-        hrcA = readHRC(nodeAbsPathA + '/' + hrcFile, hierarchyStepSize)
+        hrcA = utils.readHRC(nodeAbsPathA + '/' + hrcFile, hierarchyStepSize)
 
     hrcB = None
     if os.path.isfile(nodeAbsPathB + '/' + hrcFile):
         # Check if there is data in this node in Octtree B (we check if the HRC file for this node exist)
-        hrcB = readHRC(nodeAbsPathB + '/' + hrcFile, hierarchyStepSize)
+        hrcB = utils.readHRC(nodeAbsPathB + '/' + hrcFile, hierarchyStepSize)
     
     if hrcA != None and hrcB != None:
         utils.shellExecute('mkdir -p ' + nodeAbsPathO)
         # If both Octtrees A and B have data in this node we have to merge them
-        hrcO = initHRC(hierarchyStepSize)
+        hrcO = utils.initHRC(hierarchyStepSize)
         for level in range(hierarchyStepSize+2):
             numChildrenA = len(hrcA[level])
             numChildrenB = len(hrcB[level])
@@ -126,7 +68,7 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
                 for i in range(numChildrenO):
                     hasNodeA = (i < numChildrenA) and (hrcA[level][i] > 0)
                     hasNodeB = (i < numChildrenB) and (hrcB[level][i] > 0)
-                    (childNode, isFile) = getName(level, i, node, hierarchyStepSize, extension)
+                    (childNode, isFile) = utils.getNodeName(level, i, node, hierarchyStepSize, extension)
                     if hasNodeA and hasNodeB:
                         hrcO[level].append(hrcA[level][i] + hrcB[level][i])
                         #merge lAZ or folder (iteratively)
@@ -149,7 +91,7 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
             else:
                 hrcO[level] = list(numpy.array(hrcA[level] + ([0]*(numChildrenO - numChildrenA))) + numpy.array(hrcB[level] + ([0]*(numChildrenO - numChildrenB))))            
         # Write the HRC file
-        writeHRC(nodeAbsPathO + '/' + hrcFile, hierarchyStepSize, hrcO)
+        utils.writeHRC(nodeAbsPathO + '/' + hrcFile, hierarchyStepSize, hrcO)
     elif hrcA != None:
         # Only Octtree A has data in this node. We can directly copy it to the output Octtree
         utils.shellExecute(cmcommand + nodeAbsPathA + ' ' + nodeAbsPathO)

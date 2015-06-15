@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
 
-import os, sys, subprocess, multiprocessing
+import os, sys, subprocess, multiprocessing, struct, numpy
 import liblas
 from osgeo import osr
 
 PC_FILE_FORMATS = ['las','laz']
+OCTTREE_NODE_NUM_CHILDREN = 8
 
 def shellExecute(command, showOutErr = False):
     """ Execute the command in the SHELL and shows both stdout and stderr"""
@@ -208,3 +209,59 @@ def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue, srid):
             kill_received = True
         else:            
             detailsQueue.put(getPCFileDetails(job, srid))
+            
+def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
+    # Read a node from the binary file 
+    b = struct.unpack('B', binaryFile.read(1))[0]
+    n = struct.unpack('I', binaryFile.read(4))[0]
+    
+    for i in range(OCTTREE_NODE_NUM_CHILDREN):
+        # We will store a positive number if the child i exists, 0 otherwise
+        data[level].append((1<<i) & b)
+    
+    if lastInLevel and level < (hierarchyStepSize+1): # If we have finished with current level and not in last level we go one more level deep
+        if sum(data[level]):
+            lastInNextLevel = (len(data[level]) - 1) - list(numpy.array(data[level]) > 0)[::-1].index(True) # We get the index of the last node in the next level which has data
+            for j in range(lastInNextLevel + 1): # For all the nodes until the one with data, we read the node in the next level
+                if data[level][j]:
+                    data[level][j] = getNode(binaryFile, level+1, data, j == lastInNextLevel, hierarchyStepSize)
+                else:
+                    data[level+1].extend([0] * OCTTREE_NODE_NUM_CHILDREN) # If there is no data we still fill 0s to have consistent trees
+    return n
+
+def initHRC(hierarchyStepSize):
+    data = {}
+    for i in range(hierarchyStepSize+2): #In each HRC file we have info about the current level, hierarchyStepSize more, and only existence info in hierarchyStepSize+1, so total of hierarchyStepSize+2
+        data[i] = []
+    return data
+
+def readHRC(hrcFileAbsPath, hierarchyStepSize):
+    data = initHRC(hierarchyStepSize)
+    data[0].append(getNode(open(hrcFileAbsPath, "rb"), 1, data, True, hierarchyStepSize))
+    return data   
+
+def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
+    oFile = open(hrcFileAbsPath, "wb")
+    for i in range(hierarchyStepSize+1):
+        for j in range(len(data[i])):
+            if data[i][j]:
+                m = data[i+1][OCTTREE_NODE_NUM_CHILDREN*j:OCTTREE_NODE_NUM_CHILDREN*(j+1)]
+                mask= 0
+                for k in range(OCTTREE_NODE_NUM_CHILDREN):
+                    if k < len(m) and m[k]:
+                        mask += 1<<k
+                oFile.write(struct.pack('B', mask) + struct.pack('I', data[i][j]))
+    oFile.close()
+    
+def getNodeName(level, i, parentName, hierarchyStepSize, extension):
+    name_sub = ''
+    if level:
+        for l in range(level-1)[::-1]:
+            name_sub += str((i / int(math.pow(OCTTREE_NODE_NUM_CHILDREN,l+1))) % OCTTREE_NODE_NUM_CHILDREN)
+        name_sub += str(i % OCTTREE_NODE_NUM_CHILDREN)
+        if level < hierarchyStepSize:
+            return (parentName + name_sub + '.' + extension, True)
+        else:
+            return (name_sub, False)
+    else:
+        return (parentName + '.' + extension, True)
