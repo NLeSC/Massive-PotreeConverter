@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
 
-import os, sys, subprocess, multiprocessing, struct, numpy
+import os, sys, subprocess, multiprocessing, struct, numpy, math
 import liblas
 from osgeo import osr
 

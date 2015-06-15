@@ -115,7 +115,7 @@ def run(inputFolder, srid, level, useHRC, dbName, dbTable, dbPass, dbUser, dbHos
     inputFolder = os.path.abspath(inputFolder)
     
     # Create table if it does not exist
-    cursor.execute('CREATE TABLE ' + dbTable + ' IF NOT EXISTS (filepath text, level integer, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s)))', [srid, ])
+    cursor.execute('CREATE TABLE IF NOT EXISTS ' + dbTable + ' (filepath text, level integer, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s))', [srid, ])
     connection.commit()
     
     # Delete previous entries related to this level
