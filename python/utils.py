@@ -8,6 +8,10 @@ from osgeo import osr
 PC_FILE_FORMATS = ['las','laz']
 OCTTREE_NODE_NUM_CHILDREN = 8
 
+DB_NAME = 'pc_extents'
+DB_TABLE_RAW = 'extents_raw'
+DB_TABLE_POTREE = 'extents_potree'
+
 def shellExecute(command, showOutErr = False):
     """ Execute the command in the SHELL and shows both stdout and stderr"""
     print command
@@ -265,3 +269,14 @@ def getNodeName(level, i, parentName, hierarchyStepSize, extension):
             return (name_sub, False)
     else:
         return (parentName + '.' + extension, True)
+    
+    
+def getFileSize(absPath):
+    """ Get the size of a file """
+    try:
+        if os.path.islink(absPath):
+            return int(((os.popen('du -sm ' + os.readlink(absPath))).read().split('\t'))[0])
+        else:
+            return int(((os.popen('du -sm ' + absPath)).read().split('\t'))[0])
+    except ValueError:
+        return None

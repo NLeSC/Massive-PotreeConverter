@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Merge two Potree OctTrees into a single one."""
 
-import argparse, traceback, time, os, struct, json, numpy, math, subprocess
+import argparse, traceback, time, os, json, numpy
 from liblas import file
 import utils
 
