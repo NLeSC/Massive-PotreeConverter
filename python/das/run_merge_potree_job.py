@@ -28,7 +28,8 @@ def worker(tileA, tileB, sleepTime):
 
     os.system('cp -r ' + tileOLocalOutputFolder + ' ' + tileOOutputFolder)
 
-    os.system('rm -rf ' + tileOLocalInputFolder)
+    os.system('rm -rf ' + tileALocalInputFolder)
+    os.system('rm -rf ' + tileBLocalInputFolder)
     os.system('rm -rf ' + tileOLocalOutputFolder)
     return
 
@@ -40,6 +41,10 @@ for i in range(numtasks):
     p = multiprocessing.Process(target=worker, args=(tiles[2*i], tiles[(2*i) + 1],100*i))
     jobs.append(p)
     p.start()
+
+if len(tiles) % 2:
+   #An odd number means that the last tile can be directly copied to the output folder
+   os.system('cp -r ' + inputFolder + '/' + tiles[-1] + ' ' + outputFolder + '/' + tiles[-1] )
 
 for i in range(numtasks):
     jobs[i].join()

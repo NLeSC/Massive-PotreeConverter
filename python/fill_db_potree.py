@@ -75,6 +75,7 @@ def addNodeFile(cursor, dbTable, insertArgs):
     counter += 1
     if counter == COMMIT_INTERVAL:
         cursor.connection.commit()
+        counter = 0
 
 
 def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort):
