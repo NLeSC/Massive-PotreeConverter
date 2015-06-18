@@ -20,7 +20,6 @@ known extent of the OctTree nodes""")
     parser.add_argument('-i','--input',default='',help='Input folder with the Potree OctTree',type=str, required=True)
     parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
-    parser.add_argument('-t','--dbtable',default=utils.DB_TABLE_POTREE,help='Table name [default ' + utils.DB_TABLE_POTREE + ']',type=str)
     parser.add_argument('-u','--dbuser',default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass',default='',help='DB pass',type=str)
     parser.add_argument('-b','--dbhost',default='',help='DB host',type=str)
@@ -50,7 +49,7 @@ def getChildBC(minX,minY,minZ,maxX,maxY,maxZ,childIndex):
     else:
         raise Exception('Child index must be [0,7]!')
     
-def addNodeFolder(cursor, dbTable, node, nodeAbsPath, hierarchyStepSize, extension, minX, minY, minZ, maxX, maxY, maxZ, srid):
+def addNodeFolder(cursor, node, nodeAbsPath, hierarchyStepSize, extension, minX, minY, minZ, maxX, maxY, maxZ, srid):
     hrcFile = node + '.hrc'
     hrc = None
     if os.path.isfile(nodeAbsPath + '/' + hrcFile):
@@ -65,12 +64,12 @@ def addNodeFolder(cursor, dbTable, node, nodeAbsPath, hierarchyStepSize, extensi
                     for pNode in relativeNode:
                         (lminX, lminY, lminZ, lmaxX, lmaxY, lmaxZ) = getChildBC(lminX, lminY, lminZ, lmaxX, lmaxY, lmaxZ, int(pNode))
                     if isFile: 
-                        addNodeFile(cursor, dbTable, [nodeAbsPath + '/' + childNode, len(childNode) - 5, int(hrc[level][i]), lminZ, lmaxZ, lminX, lminY, lmaxX, lmaxY, int(srid)])
+                        addNodeFile(cursor, [nodeAbsPath + '/' + childNode, len(childNode) - 5, int(hrc[level][i]), lminZ, lmaxZ, lminX, lminY, lmaxX, lmaxY, int(srid)])
                     else:
-                        addNodeFolder(cursor, dbTable, node + childNode, nodeAbsPath + '/' + childNode, hierarchyStepSize, extension, lminX, lminY, lminZ, lmaxX, lmaxY, lmaxZ, srid)       
+                        addNodeFolder(cursor, node + childNode, nodeAbsPath + '/' + childNode, hierarchyStepSize, extension, lminX, lminY, lminZ, lmaxX, lmaxY, lmaxZ, srid)       
 
-def addNodeFile(cursor, dbTable, insertArgs):
-    insertStatement = """INSERT INTO """ + dbTable + """(filepath,level,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
+def addNodeFile(cursor, insertArgs):
+    insertStatement = """INSERT INTO """ + utils.DB_TABLE_POTREE + """(filepath,level,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
     cursor.execute(insertStatement, insertArgs)
     counter += 1
     if counter == COMMIT_INTERVAL:
@@ -88,7 +87,7 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort):
     inputFolder = os.path.abspath(inputFolder)
     
     # Create table
-    cursor.execute('CREATE TABLE ' + dbTable + ' (filepath text, level integer, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s))', [srid, ])
+    cursor.execute('CREATE TABLE ' + utils.DB_TABLE_POTREE + ' (filepath text, level integer, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s))', [srid, ])
     connection.commit()
     connection.close()
     
@@ -113,7 +112,7 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort):
             extension = 'laz'
         else:
             raise Exception('Error: ' + __file__ + ' only compatible with las/laz format')
-        addNodeFolder(cursor, dbTable, 'r', dataAbsPath + '/r', hierarchyStepSize, extension, minX, minY, minZ, maxX, maxY, maxZ, srid)
+        addNodeFolder(cursor, 'r', dataAbsPath + '/r', hierarchyStepSize, extension, minX, minY, minZ, maxX, maxY, maxZ, srid)
     else:
         raise Exception('Error: ' + dataAbsPath + ' is empty!')
     
@@ -121,8 +120,8 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort):
     connection.commit()
     
     # Create an index for the geometries
-    cursor.execute('CREATE INDEX ' + dbTable + '_geom ON '  + dbTable + ' USING GIST ( geom )')
-    cursor.execute('CREATE INDEX ' + dbTable + '_level ON ' + dbTable + ' (level)')
+    cursor.execute('CREATE INDEX ' + utils.DB_TABLE_POTREE + '_geom ON '  + utils.DB_TABLE_POTREE + ' USING GIST ( geom )')
+    cursor.execute('CREATE INDEX ' + utils.DB_TABLE_POTREE + '_level ON ' + utils.DB_TABLE_POTREE + ' (level)')
     connection.commit()
     
     connection.close()
@@ -133,7 +132,6 @@ if __name__ == "__main__":
     print 'Input Potree OctTree: ', args.input
     print 'SRID: ', args.srid
     print 'DB name: ', args.dbname
-    print 'DB table: ', args.dbtable
     print 'DB user: ', args.dbuser
     print 'DB pass: ', '*'*len(args.dbpass)
     print 'DB host: ', args.dbhost
@@ -142,7 +140,7 @@ if __name__ == "__main__":
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.srid, args.dbname, args.dbtable, args.dbpass, args.dbuser, args.dbhost, args.dbport)
+        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'

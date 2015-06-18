@@ -13,7 +13,6 @@ def argument_parser():
     parser.add_argument('-i','--input',default='',help='Input folder with the files',type=str, required=True)
     parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
-    parser.add_argument('-t','--dbtable',default=utils.DB_TABLE_RAW,help='Table name [default ' + utils.DB_TABLE_RAW + ']',type=str)
     parser.add_argument('-u','--dbuser',default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass',default='',help='DB pass',type=str)
     parser.add_argument('-b','--dbhost',default='',help='DB host',type=str)
@@ -22,7 +21,7 @@ def argument_parser():
     return parser
 
 
-def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, dbTable, srid):
+def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, srid):
     connection = psycopg2.connect(connectionString)
     cursor = connection.cursor()
     kill_received = False
@@ -39,14 +38,14 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, dbTable
             kill_received = True
         else:            
             (_, count, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(fileAbsPath)
-            insertStatement = """INSERT INTO """ + dbTable + """(filepath,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
+            insertStatement = """INSERT INTO """ + utils.DB_TABLE_RAW + """(filepath,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
             insertArgs = [fileAbsPath, int(count), float(minZ), float(maxZ), float(minX), float(minY), float(maxX), float(maxY), int(srid)]
             cursor.execute(insertStatement, insertArgs)
             cursor.connection.commit()
             resultsQueue.put((processIndex, fileAbsPath))
     connection.close()
 
-def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numberProcs):
+def run(inputFolder, srid, dbName, dbPass, dbUser, dbHost, dbPort, numberProcs):
     # Make connection
     connectionString = utils.getConnectString(dbName, dbUser, dbPass, dbHost, dbPort)
     connection = psycopg2.connect(connectionString)
@@ -56,7 +55,7 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numb
     inputFolder = os.path.abspath(inputFolder)
     
     # Create table if it does not exist
-    cursor.execute('CREATE TABLE ' + dbTable + ' (filepath text, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s))', [srid, ])
+    cursor.execute('CREATE TABLE ' + utils.DB_TABLE_RAW + ' (filepath text, numberpoints integer, minz double precision, maxz double precision, geom public.geometry(Geometry, %s))', [srid, ])
     connection.commit()
     connection.close()
     
@@ -77,7 +76,7 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numb
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, connectionString, dbTable, srid)))
+            args=(i, tasksQueue, resultsQueue, connectionString, srid)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
@@ -91,7 +90,7 @@ def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort, numb
     # Create an index for the geometries
     connection = psycopg2.connect(connectionString)
     cursor = connection.cursor()
-    cursor.execute('CREATE INDEX ' + dbTable + '_geom ON '  + dbTable + ' USING GIST ( geom )')
+    cursor.execute('CREATE INDEX ' + utils.DB_TABLE_RAW + '_geom ON '  + utils.DB_TABLE_RAW + ' USING GIST ( geom )')
     connection.commit()
     connection.close()
 
@@ -100,7 +99,6 @@ if __name__ == "__main__":
     print 'Input folder: ', args.input
     print 'SRID: ', args.srid
     print 'DB name: ', args.dbname
-    print 'DB table: ', args.dbtable
     print 'DB user: ', args.dbuser
     print 'DB pass: ', '*'*len(args.dbpass)
     print 'DB host: ', args.dbhost
@@ -110,7 +108,7 @@ if __name__ == "__main__":
     try:
         t0 = time.time()
         print 'Starting ' + os.path.basename(__file__) + '...'
-        run(args.input, args.srid, args.dbname, args.dbtable, args.dbpass, args.dbuser, args.dbhost, args.dbport, args.proc)
+        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport, args.proc)
         print 'Finished in %.2f seconds' % (time.time() - t0)
     except:
         print 'Execution failed!'
