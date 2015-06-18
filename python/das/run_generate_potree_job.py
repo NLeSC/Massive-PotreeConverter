@@ -19,11 +19,11 @@ def worker(tile, sleepTime):
     os.system('rm -rf ' + tileOutputFolder)
     os.system('cp -r ' + tileInputFolder +  ' ' + tileLocalInputFolder)
     os.system('mkdir -p ' + tileLocalOutputFolder)
-    os.system('mkdir -p ' + tileOutputFolder)
+    os.system('mkdir -p ' + outputFolder)
 
     os.system('source ' + setEnvAbsPath + '; PotreeConverter --outdir ' + tileLocalOutputFolder + ' --levels 13 --output-format LAZ --source ' + tileLocalInputFolder + ' --spacing 1024 --aabb 13420.00 306740.00 -30.00 278490.00 615440.00 400.00 &> ' + tileOutputFolder + '.log')
 
-    os.system('cp -r ' + tileLocalOutputFolder + ' ' + tileOutputFolder)
+    os.system('cp -r ' + tileLocalOutputFolder + ' ' + outputFolder)
 
     os.system('rm -rf ' + tileLocalInputFolder)
     os.system('rm -rf ' + tileLocalOutputFolder)

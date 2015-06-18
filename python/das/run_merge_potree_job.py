@@ -22,11 +22,11 @@ def worker(tileA, tileB, sleepTime):
     os.system('cp -r ' + tileAInputFolder +  ' ' + tileALocalInputFolder)
     os.system('cp -r ' + tileBInputFolder +  ' ' + tileBLocalInputFolder)
     os.system('mkdir -p ' + tileOLocalOutputFolder)
-    os.system('mkdir -p ' + tileOOutputFolder)
+    os.system('mkdir -p ' + outputFolder)
 
     os.system('source ' + setEnvAbsPath + '; merge_potree.py -a ' + tileALocalInputFolder + ' -b ' + tileBLocalInputFolder + ' -o ' + tileOLocalOutputFolder + ' -m  &> ' + tileOOutputFolder + '.log')
 
-    os.system('cp -r ' + tileOLocalOutputFolder + ' ' + tileOOutputFolder)
+    os.system('cp -r ' + tileOLocalOutputFolder + ' ' + outputFolder)
 
     os.system('rm -rf ' + tileALocalInputFolder)
     os.system('rm -rf ' + tileBLocalInputFolder)
