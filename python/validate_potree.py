@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Validates that the HRC files are correct in a Potree Octtree"""
 
-import argparse, traceback, time, os, multiprocessing, json
+import argparse, traceback, time, os, json
 import utils
 
 def argument_parser():
@@ -39,7 +39,7 @@ def validateNode(node, nodeAbsPath, hierarchyStepSize, extension):
                     print 'Error: could not find ', childNodeAbsPath
                     raise Exception(node + ' in ' + nodeAbsPath + ' is not correct')
                 if isFile:
-                    fNumPoints = utils.getPCFileDetails(childNodeAbsPath)[1] 
+                    fNumPoints = utils.getPCFileDetails(childNodeAbsPath)[0] 
                     if hrcNumPoints != fNumPoints:
                         print 'Error: number of points in HRC (' + str(hrcNumPoints) + ') != number of points in file (' + str(fNumPoints) + ') in ' + childNodeAbsPath
                 else:

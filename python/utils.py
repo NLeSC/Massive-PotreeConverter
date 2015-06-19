@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
-
-import os, sys, subprocess, multiprocessing, struct, numpy, math
-import liblas
-from osgeo import osr
+import os, subprocess, struct, numpy, math
 
 PC_FILE_FORMATS = ['las','laz']
 OCTTREE_NODE_NUM_CHILDREN = 8
@@ -91,25 +88,14 @@ returns a list with only one element, the given file """
     else:
         raise Exception("ERROR: inputElement is neither a valid folder nor file")
     return []    
-
-
-def getSRID(absPath):
-    """ Gets the SRID of a LAS/LAZ file (using liblas and GDAL, hence it is not fast)"""
-    lasHeader = liblas.file.File(absPath, mode='r').header
-    osrs = osr.SpatialReference()
-    osrs.SetFromUserInput(lasHeader.get_srs().get_wkt())
-    #osrs.AutoIdentifyEPSG()
-    return osrs.GetAttrValue( 'AUTHORITY', 1 )
         
-def getPCFileDetails(absPath, srid = None):
+def getPCFileDetails(absPath):
     """ Get the details (count numPoints and extent) of a LAS/LAZ file (using LAStools, hence it is fast)"""
     count = None
     (minX, minY, minZ, maxX, maxY, maxZ) = (None, None, None, None, None, None)
     (scaleX, scaleY, scaleZ) = (None, None, None)
     (offsetX, offsetY, offsetZ) = (None, None, None)
-    
-    if srid == None:
-        srid = getSRID(absPath)
+
     command = 'lasinfo ' + absPath + ' -nc -nv -nco'
     for line in shellExecute(command).split('\n'):
         if line.count('min x y z:'):
@@ -134,15 +120,13 @@ def getPCFileDetails(absPath, srid = None):
             offsetX = float(offsetX)
             offsetY = float(offsetY)
             offsetZ = float(offsetZ)
-    return (srid, count, minX, minY, minZ, maxX, maxY, maxZ, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ)
+    return (count, minX, minY, minZ, maxX, maxY, maxZ, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ)
 
-def getPCFolderDetails(absPath, srid = None, numProc = 1):
-    """ Get the details (count numPoints and extent) of a folder with LAS/LAZ files (using LAStools, hence it is fast)
-    It is assumed that all file shave same SRID and scale as first one"""
+def getPCFolderDetails(absPath, numProc = 1):
+    """ Get the details (count numPoints and extent) of a folder with LAS/LAZ files (using LAStools)"""
     tcount = 0
     (tminx, tminy, tminz, tmaxx, tmaxy, tmaxz) =  (None, None, None, None, None, None)
     (tscalex, tscaley, tscalez) = (None, None, None)
-    tsrid = None
     
     if os.path.isdir(absPath):
         inputFiles = getFiles(absPath, recursive=True)
@@ -163,16 +147,15 @@ def getPCFolderDetails(absPath, srid = None, numProc = 1):
     # We start numProc users workers
     for i in range(numProc):
         workers.append(multiprocessing.Process(target=runProcGetPCFolderDetailsWorker, 
-            args=(tasksQueue, detailsQueue, srid)))
+            args=(tasksQueue, detailsQueue)))
         workers[-1].start()
         
     for i in range(numInputFiles):
         sys.stdout.write('\r')
-        (srid, count, minx, miny, minz, maxx, maxy, maxz, scalex, scaley, scalez, _, _, _) = detailsQueue.get()
+        (count, minx, miny, minz, maxx, maxy, maxz, scalex, scaley, scalez, _, _, _) = detailsQueue.get()
         if i == 0:
             (tscalex, tscaley, tscalez) = (scalex, scaley, scalez)
-            tsrid = srid
-            
+
         tcount += count
         if count:
             if tminx == None or minx < tminx:
@@ -197,9 +180,9 @@ def getPCFolderDetails(absPath, srid = None, numProc = 1):
         workers[i].join()
     
     print
-    return (inputFiles, tsrid, tcount, tminx, tminy, tminz, tmaxx, tmaxy, tmaxz, tscalex, tscaley, tscalez)
+    return (inputFiles, tcount, tminx, tminy, tminz, tmaxx, tmaxy, tmaxz, tscalex, tscaley, tscalez)
 
-def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue, srid):
+def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue):
     kill_received = False
     while not kill_received:
         job = None
@@ -212,7 +195,8 @@ def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue, srid):
         if job == None:
             kill_received = True
         else:            
-            detailsQueue.put(getPCFileDetails(job, srid))
+            detailsQueue.put(getPCFileDetails(job))
+
             
 def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
     # Read a node from the binary file 

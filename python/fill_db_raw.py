@@ -37,7 +37,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, srid):
             # If we receive a None job, it means we can stop
             kill_received = True
         else:            
-            (_, count, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(fileAbsPath)
+            (count, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(fileAbsPath)
             insertStatement = """INSERT INTO """ + utils.DB_TABLE_RAW + """(filepath,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
             insertArgs = [fileAbsPath, int(count), float(minZ), float(maxZ), float(minX), float(minY), float(maxX), float(maxY), int(srid)]
             cursor.execute(insertStatement, insertArgs)

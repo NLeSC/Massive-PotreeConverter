@@ -55,7 +55,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
             kill_received = True
         else:            
             # Get number of points and BBOX of this file
-            (_, fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
+            (fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
             print 'Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY
             # For the four vertices of the BBOX we get in which tile they should go
             posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
@@ -80,7 +80,7 @@ def runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY
     utils.shellExecute('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
-        (_, gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
+        (gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
         # This tile should match with some tile. Let's use the central point to see which one
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)

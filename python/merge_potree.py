@@ -2,7 +2,6 @@
 """Merge two Potree OctTrees into a single one."""
 
 import argparse, traceback, time, os, json, numpy
-from liblas import file
 import utils
 
 # Check the LAStools is installed and that it is in the PATH before libLAS
@@ -20,27 +19,7 @@ def argument_parser():
     return parser
 
 def fixHeader(inputFile, outputFile):
-    # get correct min/max
-#    f = file.File(inputFile, mode='r')
-#    minInput = f.header.min
-#    maxInput = f.header.max
-#    f.close()
-
-    # get header of merge laz file
-#    f = file.File(outputFile, mode='r')
-#    header = f.header
-#    f.close()
-
-    # set min/max
-#    header.min = minInput
-#    header.max = maxInput
-
-    # write header
-#    f = file.File(outputFile, mode='w+', header=header)
-#    f.close()
-
-#    # the same with LAStools
-    (_, _, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
+    (_, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
     utils.shellExecute('lasinfo -i %s -nc -nv -nco -set_bounding_box %f %f %f %f %f %f' % (outputFile, minX, minY, minZ, maxX, maxY, maxZ))
 
 

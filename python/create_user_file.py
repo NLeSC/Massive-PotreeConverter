@@ -75,7 +75,7 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
     
     
     if os.path.isfile(outputAbsPath) and statusOk:
-        (_, count, _, _, _, _, _, _, _, _, _, _, _, _) = utils.getPCFileDetails(outputAbsPath, srid)
+        (count, _, _, _, _, _, _, _, _, _, _, _, _) = utils.getPCFileDetails(outputAbsPath)
         size = utils.getFileSize(outputAbsPath)
         
         content = """Subject: Data is ready

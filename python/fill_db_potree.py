@@ -3,7 +3,7 @@
 The files are not opened, instead we get the information from the HRC files and the 
 known extent of the OctTree nodes"""
 
-import argparse, traceback, time, os, math, psycopg2, json
+import argparse, traceback, time, os, psycopg2, json
 import utils
 
 USERNAME = utils.getUserName()

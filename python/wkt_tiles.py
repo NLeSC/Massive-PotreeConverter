@@ -30,7 +30,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, useApprox):
             tFile = open(outputFolder + '/' + os.path.basename(tileAbsPath) + '.wkt', 'w')
             (tMinX,tMinY,tMaxX,tMaxY) = (None, None, None, None)
             for tilefile in os.listdir(tileAbsPath):
-                (_, _, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tileAbsPath + '/' + tilefile)
+                (_, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tileAbsPath + '/' + tilefile)
                 if useApprox:
                     if tMinX == None or tMinX > fMinX:
                         tMinX = fMinX
