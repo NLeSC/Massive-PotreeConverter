@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 import os,sys,multiprocessing
 
+# Runs in parallel the generation of the given tiles. For each tile:
+# It copies it from inputFolder (shared by all cluster nodes) to a local folder
+# Process it
+# Copies the result to the shared folder
+# Remove local copies
+# The different parallel processes are delayed in order to avoid simult. IO
+
 inputFolder = sys.argv[1]
 outputFolder = sys.argv[2]
 localInputFolder = sys.argv[3]

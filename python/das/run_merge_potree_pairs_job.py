@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 import os,sys,multiprocessing
 
+# Merges pairs of potree octrees. If 8 tiles are given this will produce 4 merged ones. For each merge process:
+# The data is copied from a shared folder (between the nodes in a cluster) to a local folder
+# The merging is done locally
+# The merged data is copied back to the shared folder
+# Remove local copies
+# The different parallel processes are delayed in order to avoid simult. IO  
+
 inputFolder = sys.argv[1]
 outputFolder = sys.argv[2]
 localInputFolder = sys.argv[3]

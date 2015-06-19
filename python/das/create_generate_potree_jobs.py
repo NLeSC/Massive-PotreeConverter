@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os,sys,numpy
 
+# Create the qsub tasks for generating potree octtrees
+
 inputFolder = sys.argv[1]
 outputFolder = sys.argv[2]
 localInputFolder = sys.argv[3]

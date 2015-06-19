@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os,sys,numpy
 
+# Create qsub tasks for merging pairs of potree octrees
+
 inputFolder = sys.argv[1]
 outputFolder = sys.argv[2]
 localInputFolder = sys.argv[3]
