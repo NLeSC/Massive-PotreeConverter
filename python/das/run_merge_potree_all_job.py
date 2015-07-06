@@ -6,15 +6,20 @@ outputFolder = sys.argv[2]
 setEnvAbsPath = sys.argv[3]
 tiles = sys.argv[4].split(',')
 
-for mIndex in range(1, len(tiles)):
+validTiles = []
+for tile in tiles:
+    dataAbsPath = inputFolder + '/' + tile + '/data'
+    if os.path.isdir(dataAbsPath) and len(os.listdir(dataAbsPath)):
+        validTiles.append(tile)
+
+for mIndex in range(1, len(validTiles)):
     if mIndex == 1:
-        tileAInputFolder = inputFolder + '/' + tiles[0]
+        tileAInputFolder = inputFolder + '/' + validTiles[0]
     else:
-        tileAInputFolder = tileOOutputFolder + '/' + 'tile_merged_%d' % (mIndex-1)
-    tileBInputFolder = inputFolder + '/' + tiles[mIndex]
+        tileAInputFolder = outputFolder + '/' + 'tile_merged_%d' % (mIndex-1)
+    tileBInputFolder = inputFolder + '/' + validTiles[mIndex]
     
-    tileO = 'tile_merged_%d' % mIndex
-    tileOOutputFolder = outputFolder + '/' + tileO
+    tileOOutputFolder = outputFolder + '/' + 'tile_merged_%d' % mIndex
     
     if os.path.isdir(tileOOutputFolder):
         raise Exception(tileOOutputFolder + ' already exists!')
