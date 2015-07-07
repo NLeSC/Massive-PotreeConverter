@@ -41,14 +41,18 @@ def run(inputFolder, outputFolder):
             raise Exception(tileOOutputFolder + ' already exists!')
         
         os.system('mkdir -p ' + tileOOutputFolder)
-        sys.stdout = open(tileOOutputFolder + '.log', 'w')
-        sys.stderr = open(tileOOutputFolder + '.err', 'w')
+        ofile = open(tileOOutputFolder + '.log', 'w')
+        efile = open(tileOOutputFolder + '.err', 'w')
+        sys.stdout = ofile 
+        sys.stderr = efile
         print 'Input Potree Octtree A: ', tileAInputFolder
         print 'Input Potree Octtree B: ', tileBInputFolder
         print 'Output Potree Octtree: ', tileOOutputFolder
         merge_potree.run(tileAInputFolder, tileBInputFolder, tileOOutputFolder, True)
+        ofile.close()
+        efile.close()
         sys.stdout = stdout
-        sys.stderr = std.err
+        sys.stderr = stderr
         #command = 'python /home/oscar/sw/Massive-PotreeConverter/python/merge_potree.py -a ' + tileAInputFolder + ' -b ' + tileBInputFolder + ' -o ' + tileOOutputFolder + ' -m  &> ' + tileOOutputFolder + '.log'
         #print command
         #os.system(command)
