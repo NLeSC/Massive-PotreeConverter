@@ -48,7 +48,9 @@ def run(inputFolder, outputFolder):
         print 'Input Potree Octtree A: ', tileAInputFolder
         print 'Input Potree Octtree B: ', tileBInputFolder
         print 'Output Potree Octtree: ', tileOOutputFolder
+        t0 = time.time()
         merge_potree.run(tileAInputFolder, tileBInputFolder, tileOOutputFolder, True)
+        print 'Finished in %.2f seconds' % (time.time() - t0)
         ofile.close()
         efile.close()
         sys.stdout = stdout
