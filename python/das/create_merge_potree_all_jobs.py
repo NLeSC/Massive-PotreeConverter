@@ -5,11 +5,10 @@ import os,sys,numpy
 
 inputFolder = sys.argv[1]
 outputFolder = sys.argv[2]
-runJobAbsPath = sys.argv[2]
-setEnvAbsPath = sys.argv[4]
-num = int(sys.argv[7])
+localInputFolder = sys.argv[3]
+localOutputFolder = sys.argv[4]
+runJobAbsPath = sys.argv[5]
+setEnvAbsPath = sys.argv[6]
 
-tilesList = sorted(os.listdir(inputFolder))
-
-print 'qsub -l h_rt=99:00:00 -V -N potree ' + runJobAbsPath + ' ' + inputFolder + ' ' + outputFolder + ' ' + setEnvAbsPath + ' ' + ','.join(tilesList) 
+print 'qsub -l h_rt=99:00:00 -V -N pmerge ' + runJobAbsPath + ' ' + inputFolder + ' ' + outputFolder + ' ' + localInputFolder + ' ' + localOutputFolder + ' ' + setEnvAbsPath 
 

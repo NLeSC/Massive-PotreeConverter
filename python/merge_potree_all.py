@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, sys, time
+import os, sys, time, argparse, traceback
 import merge_potree, utils
 
 def argument_parser():
