@@ -69,6 +69,7 @@ def addNodeFolder(cursor, node, nodeAbsPath, hierarchyStepSize, extension, minX,
                         addNodeFolder(cursor, node + childNode, nodeAbsPath + '/' + childNode, hierarchyStepSize, extension, lminX, lminY, lminZ, lmaxX, lmaxY, lmaxZ, srid)       
 
 def addNodeFile(cursor, insertArgs):
+    global counter
     insertStatement = """INSERT INTO """ + utils.DB_TABLE_POTREE + """(filepath,level,numberpoints,minz,maxz,geom) VALUES (%s, %s, %s, %s, %s, ST_MakeEnvelope(%s, %s, %s, %s, %s))"""
     cursor.execute(insertStatement, insertArgs)
     counter += 1
@@ -77,7 +78,7 @@ def addNodeFile(cursor, insertArgs):
         counter = 0
 
 
-def run(inputFolder, srid, dbName, dbTable, dbPass, dbUser, dbHost, dbPort):
+def run(inputFolder, srid, dbName, dbPass, dbUser, dbHost, dbPort):
     # Make connection
     connectionString = utils.getConnectString(dbName, dbUser, dbPass, dbHost, dbPort)
     connection = psycopg2.connect(connectionString)
