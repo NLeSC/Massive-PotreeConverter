@@ -12,12 +12,12 @@ def argument_parser():
     description="""Creates a PC file with a selection of points from a BBox and level""")
     parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-e','--mail',   default='',help='E-mail address to send e-mail after completion',type=str, required=True)
-    parser.add_argument('-l','--level',  default='',help='Level of data used for the generation [only used if the used table is the one with the potree data)',type=int, required=True)
+    parser.add_argument('-l','--level',  default='',help='Level of data used for the generation (only used if the used table is the one with the potree data). If not provided the raw data is used',type=str)
     parser.add_argument('-b','--bbox',   default='', help='Bounding box for the points selection given as minX,minY,maxX,maxY',required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
     parser.add_argument('-u','--dbuser', default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass', default='',help='DB pass',type=str)
-    parser.add_argument('-b','--dbhost', default='',help='DB host',type=str)
+    parser.add_argument('-t','--dbhost', default='',help='DB host',type=str)
     parser.add_argument('-r','--dbport', default='',help='DB port',type=str)
     parser.add_argument('-w','--baseurl', default='',help='Base URL for the output file (web access)',type=str)
     parser.add_argument('-f','--basepath', default='',help='Base path for the output file (internal access)',type=str)
@@ -41,8 +41,13 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         
         cursor.execute('SELECT max(level) FROM ' + utils.DB_TABLE_POTREE)
         maxLevelPotree = cursor.fetchone()[0]
-        if level > maxLevelPotree:
-            dbTable = utils.DB_TABLE_POTREE
+
+#        print level,maxLevelPotree
+        if level != '':
+            if int(level) <= maxLevelPotree:
+                dbTable = utils.DB_TABLE_POTREE
+            else:
+                raise Exception('Specified level (' + level + ') is not available in the potree data')
         else:
             dbTable = utils.DB_TABLE_RAW
             
@@ -51,27 +56,24 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         outputAbsPath = basePath + '/' + outputFileName
         
         if os.path.isfile(outputAbsPath):
-            message = 'The file already existed!\n'
+            raise Exception('The file already existed!')
         else:
-            query = 'SELECT filepath FROM ' + dbTable + ' where ST_Intersects(ST_MakeEnvelope(%s, %s, %s, %s, %s), geom)'
-            queryArgs = [minX, minY, maxX, maxY, str(srid)]
-            
+            query = 'SELECT filepath FROM ' + dbTable + ' where ST_Intersects(ST_MakeEnvelope(' + minX + ', ' + minY + ', ' + maxX + ', ' + maxY + ', ' + str(srid) + '), geom)'
             if dbTable == utils.DB_TABLE_POTREE:
-                query += ' AND level = %s'
-                queryArgs.append(str(level))
+                query += ' AND level = ' + str(level)
             
             inputList = outputAbsPath + '.list'
             connectionStringCommandLine = utils.getConnectString(dbName, dbUser, dbPass, dbHost, dbPort, cline = True)
-            precommand = 'psql ' + connectionStringCommandLine + ' -t -A -c "' + (query % queryArgs) + '" > ' + inputList
+            precommand = 'psql ' + connectionStringCommandLine + ' -t -A -c "' + query + '" > ' + inputList
             print precommand
             os.system(precommand)
             
             command = 'lasmerge -lof ' + inputList + ' -inside ' + minX + ' ' + minY + ' ' + maxX + ' ' + maxY + ' -merged -o ' + outputAbsPath
             print command
             os.system(command)
-    except Exception, e:
+    except:
         statusOk = False
-        message = 'There was some error in the file generation: ' + str(e)
+        message = 'There was some error in the file generation: ' + traceback.format_exc()
     
     
     if os.path.isfile(outputAbsPath) and statusOk:
