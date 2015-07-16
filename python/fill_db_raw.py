@@ -16,7 +16,7 @@ def argument_parser():
     parser.add_argument('-u','--dbuser',default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass',default='',help='DB pass',type=str)
     parser.add_argument('-b','--dbhost',default='',help='DB host',type=str)
-    parser.add_argument('-r','--dbport',default='',help='DB port',type=int)
+    parser.add_argument('-r','--dbport',default='',help='DB port',type=str)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1].',type=int)
     return parser
 
@@ -33,7 +33,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, connectionString, srid):
         except:
             # if there is an error we will quit
             kill_received = True
-        if tileAbsPath == None:
+        if fileAbsPath == None:
             # If we receive a None job, it means we can stop
             kill_received = True
         else:            

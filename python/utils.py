@@ -8,6 +8,7 @@ OCTTREE_NODE_NUM_CHILDREN = 8
 DB_NAME = 'pc_extents'
 DB_TABLE_RAW = 'extent_raw'
 DB_TABLE_POTREE = 'extent_potree'
+DB_TABLE_POTREE_DIST = 'potree_dist'
 
 def shellExecute(command, showOutErr = False):
     """ Execute the command in the SHELL and shows both stdout and stderr"""

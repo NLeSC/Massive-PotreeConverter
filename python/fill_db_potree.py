@@ -125,8 +125,10 @@ def run(inputFolder, srid, dbName, dbPass, dbUser, dbHost, dbPort):
     cursor.execute('CREATE INDEX ' + utils.DB_TABLE_POTREE + '_level ON ' + utils.DB_TABLE_POTREE + ' (level)')
     connection.commit()
     
+    cursor.execute('CREATE TABLE ' + utils.DB_TABLE_POTREE_DIST + ' as SELECT level, count(numberpoints) as numberfiles, sum(numberpoints) as numberpoints, ((sum(numberpoints) :: float) / (SELECT sum(numberpoints) FROM ' + utils.DB_TABLE_RAW + ') :: float) as ratio FROM ' + utils.DB_TABLE_POTREE + ' GROUP BY level ORDER BY level')
+    connection.commit()
+    
     connection.close()
-
 
 if __name__ == "__main__":
     args = argument_parser().parse_args()
