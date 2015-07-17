@@ -1,46 +1,54 @@
 #!/usr/bin/env python
 """
 This script is used to distribute the points of a bunch of LAS/LAZ files in 
-different tiles, the different tiles match the XY extent of the 
-nodes of a certain level of a Octtree (depending on specified number of tiles)
-defiend by the provided bounding box 
+different tiles. The XY extent of the different tiles match the XY extent of the 
+nodes of a certain level of a octree defined by the provided bounding box (z 
+is not required by the XY tiling). Which level of the octree is matched 
+depends on specified number of tiles:
+ - 4 (2X2) means matching with level 1 of octree
+ - 16 (4x4) means matching with level 2 of octree
+ and so on. 
 """
 
 import argparse, traceback, time, os, math, multiprocessing, json
 import utils
 
 # Check the LAStools is installed and that it is in the PATH before libLAS
-if utils.shellExecute('pdal grid --version').count('pdal grid') == 0:
-    raise Exception("PDAL grid is not installed. Be sure to have PDAL installed from https://github.com/oscarmartinezrubi/PDAL")
+if utils.shellExecute('pdal split --version').count('pdal split') == 0:
+    raise Exception("PDAL split is not installed. Be sure to have PDAL installed!")
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
     description="""This script is used to distribute the points of a bunch of LAS/LAZ files in 
-different tiles, the different tiles match the XY extent of the 
-nodes of a certain level of a Octtree (depending on specified number of tiles)
-defiend by the provided bounding box""")
+different tiles. The XY extent of the different tiles match the XY extent of the 
+nodes of a certain level of a octree defined by the provided bounding box (z 
+is not required by the XY tiling). Which level of the octree is matched 
+depends on specified number of tiles:
+ - 4 (2X2) means matching with level 1 of octree
+ - 16 (4x4) means matching with level 2 of octree
+ and so on. """)
     parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
     parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
-    parser.add_argument('-e','--extent',default='',help='Extent to be used for the tiling, specify as minX,minY,maxX,maxY',type=str, required=True)
+    parser.add_argument('-e','--extent',default='',help='XY extent to be used for the tiling, specify as minX,minY,maxX,maxY. maxX-minX must be equal to maxY-minY. This is required to have a good extent matching with the octree',type=str, required=True)
     parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
     parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
-def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
-    xpos = int((pX - minX) * axisTilesX / (maxX - minX))
-    ypos = int((pY - minY) * axisTilesY / (maxY - minY))
-    if xpos == axisTilesX: # If it is in the edge of the box (in the maximum side) we need to put in the last tile
+def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles):
+    xpos = int((pX - minX) * axisTiles / (maxX - minX))
+    ypos = int((pY - minY) * axisTiles / (maxY - minY))
+    if xpos == axisTiles: # If it is in the edge of the box (in the maximum side) we need to put in the last tile
         xpos -= 1
-    if ypos == axisTilesY:
+    if ypos == axisTiles:
         ypos -= 1
     return (xpos, ypos)
 
 def getTileName(xIndex, yIndex):
     return 'tile_%d_%d' % (int(xIndex), int(yIndex))
 
-def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
+def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles, lengthPDAL):
     kill_received = False
     while not kill_received:
         inputFile = None
@@ -58,35 +66,40 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
             (fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
             print 'Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY
             # For the four vertices of the BBOX we get in which tile they should go
-            posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
-            posMinXMaxY = getTileIndex(fMinX, fMaxY, minX, minY, maxX, maxY, axisTiles, axisTiles)
-            posMaxXMinY = getTileIndex(fMaxX, fMinY, minX, minY, maxX, maxY, axisTiles, axisTiles)
-            posMaxXMaxY = getTileIndex(fMaxX, fMaxY, minX, minY, maxX, maxY, axisTiles, axisTiles)
+            posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles)
+            posMinXMaxY = getTileIndex(fMinX, fMaxY, minX, minY, maxX, maxY, axisTiles)
+            posMaxXMinY = getTileIndex(fMaxX, fMinY, minX, minY, maxX, maxY, axisTiles)
+            posMaxXMaxY = getTileIndex(fMaxX, fMaxY, minX, minY, maxX, maxY, axisTiles)
 
             if (posMinXMinY == posMinXMaxY) and (posMinXMinY == posMaxXMinY) and (posMinXMinY == posMaxXMaxY):
                 # If they are the same the whole file can be directly copied to the tile
                 utils.shellExecute('cp ' + inputFile + ' ' + outputFolder + '/' + getTileName(*posMinXMinY))
             else:
                 # If not, we run PDAL gridder to split the file in pieces that can go to the tiles
-                tGCount = runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles, axisTiles)
+                tGCount = runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles)
                 if tGCount != fCount:
-                    print 'WARNING: gridded version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')'
+                    print 'WARNING: split version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')'
             resultsQueue.put((processIndex, inputFile, fCount))   
 
-def runPDALGridder(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTilesX, axisTilesY):
+def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles):
     pTempFolder = tempFolder + '/' + str(processIndex)
     if not os.path.isdir(pTempFolder):
         utils.shellExecute('mkdir -p ' + pTempFolder)
-    utils.shellExecute('pdal grid -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --num_x=' + str(axisTilesX) + ' --num_y=' + str(axisTilesY) + ' --min_x=' + str(minX) + ' --min_y=' + str(minY) + ' --max_x=' + str(maxX) + ' --max_y=' + str(maxY))
+        
+    # Get the lenght required by the PDAL split filter in order to get "squared" tiles
+    lengthPDAL = (maxX - minX) /  float(axisTiles)
+    
+    utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x ' + str(minX) + ' --origin_y ' + str(minY) + ' --length ' + str(lengthPDAL))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
         (gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
         # This tile should match with some tile. Let's use the central point to see which one
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
-        utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTilesX, axisTilesY)) + '/' + gFile)
+        utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles)) + '/' + gFile)
         tGCount += gCount
     return tGCount
+    
     
 def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs):
     # Check input parameters
@@ -106,13 +119,15 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     utils.shellExecute('mkdir -p ' + outputFolder)
     utils.shellExecute('mkdir -p ' + tempFolder)
     
-    # Get the global extent and the as well as number of points and input files
-    print 'Collecting information about the input data...'
     (minX, minY, maxX, maxY) = extent.split(',')
     minX = float(minX)
     minY = float(minY)
     maxX = float(maxX)
     maxY = float(maxY)
+    
+    if (maxX - minX) != (maxY - minY):
+        raise Exception('Error: Tiling requires that maxX-minX must be equal to maxY-minY!')
+    
     inputFiles = utils.getFiles(inputFolder, recursive=True)
     numInputFiles = len(inputFiles)
     print '%s contains %d files' % (inputFolder, numInputFiles)
@@ -136,7 +151,7 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
+            args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles, lengthPDAL)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
