@@ -1,10 +1,6 @@
 Potree Converter build instructions
 =======================================
 
-We are using a potree converter tweaked to be able to specify the bounding cube used for the OctTree generation
-
-git clone -b fix_fstream https://github.com/oscarmartinezrubi/PotreeConverter.git
-
 In addition to liblas and its requirements (proj, tiff, geotiff, gdal and laszip) we also need boost 1.55
 
 For installing liblas and its dependencies as well as boost 1.55 we recommend looking at https://github.com/NLeSC/pointcloud-benchmark/tree/master/install for different methods of installing liblas (and other point cloud related software) in different OSs
@@ -19,21 +15,23 @@ make install
 
 Possible issues
 ---------------
-
-There are a couple of issues that may arise with the installation of PotreeConverter
+There are a few of issues that may arise with the installation of PotreeConverter
 
 1 - The specified boost is ignored. In order to force the a certain version of Boost we modify the CMakeLists.txt 
 
 find_package(Boost 1.55.0 COMPONENTS system thread filesystem program_options regex REQUIRED)
 
-2 - We need to add #include <limits> in PotreeConverter/include/AABB.h
+2 - We may need to add #include <limits> in PotreeConverter/include/AABB.h
 
-3 - If it compaing about the CPLMutexHolder it means that GDAL is not found by the linker. To solve this you need to make sure that the next environmental variables are set before run the cmake command:
+3 - If it complaing about the CPLMutexHolder it means that GDAL is not found by the linker. This may happen with custom installations. 
+To solve this you need to make sure that the next environmental variables are set before run the cmake command:
 
+#Change these one according to your paths
 export LIBLAS_HOME=/home/oscar/sw/liblas/build
 export LASZIP_HOME=/home/oscar/sw/laszip-2.1.0/build
 export BOOST_HOME=/usr/local
 export GDAL_HOME=/home/oscar/sw/gdal-trunk/build
+# Run these exports now
 export CWD_HOME=`pwd`
 export BOOST_ROOT=$BOOST_HOME
 export CMAKE_MODULE_PATH=$LIBLAS_HOME:${CMAKE_MODULE_PATH}
@@ -50,7 +48,3 @@ Add in PotreeConverter/include/stuff.h the following line just before #include <
 
 5 - It need a new compiler. Once installed use the following option in cmake (chaning the paths according to your installation):
  -DCMAKE_CXX_COMPILER=/cm/shared/package/gcc/4.9.0/bin/c++ -DCMAKE_C_COMPILER=/cm/shared/package/gcc/4.9.0/bin/gcc -DCMAKE_LINKER=/cm/shared/package/gcc/4.9.0/bin/ld -DCMAKE_NM=/cm/shared/package/gcc/4.9.0/bin/nm -DCMAKE_OBJCOPY=/cm/shared/package/gcc/4.9.0/bin/objcopy -DCMAKE_OBJDUMP=/cm/shared/package/gcc/4.9.0/bin/objdump -DCMAKE_RANLIB=/cm/shared/package/gcc/4.9.0/bin/ranlib -DCMAKE_STRIP=/cm/shared/package/gcc/4.9.0/bin/strip
-
-5 - Current version may not be compiling (it does not at date 25/05/2015). There is some issue with fstream that can be fixed using the branch fix_fstream as proposed before. If you get this message be sure that you used this branch
-
- 

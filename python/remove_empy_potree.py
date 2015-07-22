@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+"""Removes the empty potree tiles from a folder with potree tiles"""
+
 import os, sys
 
 inputAbsPath = os.path.abspath(sys.argv[1])
