@@ -48,7 +48,7 @@ def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles):
 def getTileName(xIndex, yIndex):
     return 'tile_%d_%d' % (int(xIndex), int(yIndex))
 
-def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles, lengthPDAL):
+def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles):
     kill_received = False
     while not kill_received:
         inputFile = None
@@ -151,7 +151,7 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     # We start numberProcs users processes
     for i in range(numberProcs):
         processes.append(multiprocessing.Process(target=runProcess, 
-            args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles, lengthPDAL)))
+            args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
