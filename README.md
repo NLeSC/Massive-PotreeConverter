@@ -165,7 +165,7 @@ An example of using Massive-PotreeConverter through docker:
 
 1 - Build the Massive-PotreeConverter docker image:
 
-`cd /path/to/Massive-PotreeConverter/docker`
+`cd /path/to/Massive-PotreeConverter`
 
 `docker build -t oscar/mpc:v1 .`
 
