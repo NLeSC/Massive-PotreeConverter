@@ -22,6 +22,7 @@ In addition this repository also contains Python scripts:
 The following libraries/packages are required:
 
 [PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter), [LAStools] (http://rapidlasso.com/lastools/) (only open source)
+
 Python modules: numpy
 
 IMPORTANT: For time being use this [PotreeConverter fork] (https://github.com/oscarmartinezrubiorg/PotreeConverter)
@@ -31,6 +32,7 @@ IMPORTANT: For time being use this [PotreeConverter fork] (https://github.com/os
 Optionally the extents of the different involved data (raw data and potree octree) can be dumped into a PostGIS database. Extra requirements are:
 
 PostgreSQL, PostGIS
+
 Python modules: psycopg2
 
 Optionally the data can be sorted and indexed in order to have faster selection (only recommended with raw data). Extra requirements are:
@@ -40,10 +42,12 @@ LAStools closed source which requires licensing required for lassort
 ## Installation
 
 Look at the web pages of [PDAL] (http://www.pdal.io/) and [PotreeConverter] (https://github.com/potree/PotreeConverter) to install those.
+
 Note that for closed part of LAStools wine is required. 
 
 For the installation of LAStools, PostgreSQL, PostGIS and PDAL we recommend 
 looking at the guidelines in https://github.com/NLeSC/pointcloud-benchmark/tree/master/install
+
 When installing PotreeConverter there may be some issues if you have custom 
 builds of some of the libraries. 
 Look at [doc/Installing_PotreeConverter] (https://github.com/NLeSC/Massive-PotreeConverter/blob/master/doc/Installing_PotreeConverter)
