@@ -153,7 +153,7 @@ as for instance done in `create_user_file.py`.
 
 ## Docker
 
-We have created a Dockerfile (in docker folder) which is a Ubuntu 14.04 with the proper installations of PDAL, PotreeConverter, LAStools (open) and Massive-PotreeConverter. It is meant to help you when running the `generate_tiles.py`, `generate_potree.py`, `merge_potree.py` and `merge_potree_all.py`
+We have created a Dockerfile which is a Ubuntu 14.04 with the proper installations of PDAL, PotreeConverter, LAStools (open) and Massive-PotreeConverter. It is meant to help you when running the `generate_tiles.py`, `generate_potree.py`, `merge_potree.py` and `merge_potree_all.py`
 
 Dont's know about Docker? See [Docker] (https://www.docker.com/)
 
