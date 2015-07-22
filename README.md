@@ -27,6 +27,8 @@ Python modules: numpy
 
 IMPORTANT: For time being use this [PotreeConverter fork] (https://github.com/oscarmartinezrubiorg/PotreeConverter)
 
+There is a Dockerfile available. See end of page.
+
 ### Optional
 
 Optionally the extents of the different involved data (raw data and potree octree) can be dumped into a PostGIS database. Extra requirements are:
