@@ -4,6 +4,10 @@
 import argparse, traceback, time, os, psycopg2
 import utils
 
+# Check the LAStools is installed and that it is in the PATH before libLAS
+if utils.shellExecute('lasmerge -version').count('LAStools') == 0:
+    raise Exception("LAStools lasmerge is not found!. Please check that it is in PATH and that it is before libLAS binaries")
+
 USERNAME = utils.getUserName()
 
 def argument_parser():

@@ -4,6 +4,12 @@
 import argparse, traceback, time, os, multiprocessing
 import utils
 
+# Check the LAStools is installed and that it is in the PATH before libLAS
+if utils.shellExecute('lasindex -version').count('LAStools') == 0:
+    raise Exception("LAStools lasindex is not found!. Please check that it is in PATH and that it is before libLAS binaries")
+if utils.shellExecute('lassort.exe -version').count('LAStools') == 0:
+    raise Exception("LAStools lasindex is not found!. Please check that it is in PATH and that it is before libLAS binaries")
+
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
