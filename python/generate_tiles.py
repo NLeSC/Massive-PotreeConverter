@@ -73,7 +73,10 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
 
             if (posMinXMinY == posMinXMaxY) and (posMinXMinY == posMaxXMinY) and (posMinXMinY == posMaxXMaxY):
                 # If they are the same the whole file can be directly copied to the tile
-                utils.shellExecute('cp ' + inputFile + ' ' + outputFolder + '/' + getTileName(*posMinXMinY))
+                tileFolder = outputFolder + '/' + getTileName(*posMinXMinY)
+                if not os.path.isdir(tileFolder):
+                    utils.shellExecute('mkdir -p ' + tileFolder)
+                utils.shellExecute('cp ' + inputFile + ' ' + tileFolder)
             else:
                 # If not, we run PDAL gridder to split the file in pieces that can go to the tiles
                 tGCount = runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles)
@@ -96,7 +99,10 @@ def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, min
         # This tile should match with some tile. Let's use the central point to see which one
         pX = gFileMinX + ((gFileMaxX - gFileMinX) / 2.)
         pY = gFileMinY + ((gFileMaxY - gFileMinY) / 2.)
-        utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles)) + '/' + gFile)
+        tileFolder = outputFolder + '/' + getTileName(*getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles))
+        if not os.path.isdir(tileFolder):
+            utils.shellExecute('mkdir -p ' + tileFolder)
+        utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + tileFolder + '/' + gFile)
         tGCount += gCount
     return tGCount
     
