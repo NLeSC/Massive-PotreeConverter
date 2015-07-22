@@ -137,11 +137,6 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     inputFiles = utils.getFiles(inputFolder, recursive=True)
     numInputFiles = len(inputFiles)
     print '%s contains %d files' % (inputFolder, numInputFiles)
-    
-    # Generate the output folder for the tiles
-    for xIndex in range(axisTiles):
-        for yIndex in range(axisTiles):
-            utils.shellExecute('mkdir -p ' + outputFolder + '/' + getTileName(xIndex, yIndex))
 
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
