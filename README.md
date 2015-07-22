@@ -162,22 +162,25 @@ In addition to installing all the required software it also creates three volumn
 An example of using Massive-PotreeConverter through docker:
 
 1 - Build the Massive-PotreeConverter docker image:
-``
-cd /path/to/Massive-PotreeConverter/docker
-docker build -t oscar/mpc:v1 .
-``
+
+`cd /path/to/Massive-PotreeConverter/docker`
+
+`docker build -t oscar/mpc:v1 .`
 
 2 - Run the script to generate tiles:
+
 ``
 docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ahn_bench000020.laz -o /data2/tiles -t /data3/temp -e 85000.0,446250.0,88000.0,449250.0 -n 16 -p 1
 ``
 
 3- Run the script to generate the potree octree of each tile:
+
 ``
 docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_potree.py -i /data2/tiles -o /data1/tiles_potree -f LAZ -l 8 -s 20 -e 85000.0,446250.0,-50,88000.0,449250.0,2950 -c 2
 ``
 
 4 - Run the script to merge all the potree octrees into one:
+
 ``
 docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data2/tiles_potree_merged 
 ``
