@@ -150,3 +150,34 @@ Run the `fill_db_potree.py`
 
 After these additional steps you can make selections with level of detail selection. 
 as for instance done in `create_user_file.py`.
+
+## Docker
+
+We have created a Dockerfile (in docker folder) which is a Ubuntu 14.04 with the proper installations of PDAL, PotreeConverter, LAStools (open) and Massive-PotreeConverter. It is meant to help you when running the `generate_tiles.py`, `generate_potree.py`, `merge_potree.py` and `merge_potree_all.py`
+
+Dont's know about Docker? See [Docker] (https://www.docker.com/)
+
+In addition to installing all the required software it also creates three volumnes (/data1, /data2, /data3) which are meant to be mounted from different devices when executing docker run. Ideally always try to run in a way that the input data is in one device and the output in another (we actually have 3 volumes because of temp data)
+
+An example of using Massive-PotreeConverter through docker:
+
+1 - Build the Massive-PotreeConverter docker image:
+``
+cd /path/to/Massive-PotreeConverter/docker
+docker build -t oscar/mpc:v1 .
+``
+
+2 - Run the script to generate tiles:
+``
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ahn_bench000020.laz -o /data2/tiles -t /data3/temp -e 85000.0,446250.0,88000.0,449250.0 -n 16 -p 1
+``
+
+3- Run the script to generate the potree octree of each tile:
+``
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_potree.py -i /data2/tiles -o /data1/tiles_potree -f LAZ -l 8 -s 20 -e 85000.0,446250.0,-50,88000.0,449250.0,2950 -c 2
+``
+
+4 - Run the script to merge all the potree octrees into one:
+``
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data2/tiles_potree_merged 
+``
