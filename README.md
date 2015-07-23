@@ -184,5 +184,5 @@ docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/d
 4 - Run the script to merge all the potree octrees into one:
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data2/tiles_potree_merged 
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data1/tiles_potree_merged 
 ``
