@@ -51,7 +51,8 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
             if int(level) <= maxLevelPotree:
                 dbTable = utils.DB_TABLE_POTREE
             else:
-                raise Exception('Specified level (' + level + ') is not available in the potree data')
+                dbTable = utils.DB_TABLE_RAW
+                print ('Specified level (' + level + ') is not available in the potree data. Using raw data'
         else:
             dbTable = utils.DB_TABLE_RAW
             
