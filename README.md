@@ -27,7 +27,7 @@ Python modules: numpy
 
 IMPORTANT: For time being use this [PotreeConverter fork] (https://github.com/oscarmartinezrubiorg/PotreeConverter)
 
-There is a Dockerfile available. See end of page.
+There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
 
 ### Optional
 
@@ -159,15 +159,25 @@ We have created a Dockerfile which is a Ubuntu 14.04 with the proper installatio
 
 Dont's know about Docker? See [Docker] (https://www.docker.com/)
 
-In addition to installing all the required software it also creates three volumnes (/data1, /data2, /data3) which are meant to be mounted from different devices when executing docker run. Ideally always try to run in a way that the input data is in one device and the output in another (we actually have 3 volumes because of temp data)
+There is also an image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/) that can be directly pulled and work with!
+
+In addition to installing all the required software it also creates three volumnes (/data1, /data2, /data3) which are meant to be mounted from different devices when executing docker run. Ideally always try to run in a way that the input data is in one device and the output in another (we actually have 3 volumes because of temp data fodler required by `generate_tiles.py` script)
 
 An example of using Massive-PotreeConverter through docker:
 
-1 - Build the Massive-PotreeConverter docker image:
+1 - Build the Massive-PotreeConverter docker image from the Dockerfile in this GitHub repository:
 
 `cd /path/to/Massive-PotreeConverter`
 
 `docker build -t oscar/mpc:v1 .`
+
+
+Or pull the image from Docker Hub:
+
+`docker pull oscarmartinezrubi/massive-potreeconverter`
+
+
+The following instructions assume that the first option was used. If you pulled the image from Docker you will need to replace the image name.
 
 2 - Run the script to generate tiles:
 
@@ -175,14 +185,18 @@ An example of using Massive-PotreeConverter through docker:
 docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ahn_bench000020.laz -o /data2/tiles -t /data3/temp -e 85000.0,446250.0,88000.0,449250.0 -n 16 -p 1
 ``
 
+Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/home/oscar/test_drives/d1/myfile` is accessed as `/data1/myfile` in the container.
+
 3- Run the script to generate the potree octree of each tile:
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_potree.py -i /data2/tiles -o /data1/tiles_potree -f LAZ -l 8 -s 20 -e 85000.0,446250.0,-50,88000.0,449250.0,2950 -c 2
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 oscar/mpc:v1 generate_potree.py -i /data2/tiles -o /data1/tiles_potree -f LAZ -l 8 -s 20 -e 85000.0,446250.0,-50,88000.0,449250.0,2950 -c 2
 ``
 
 4 - Run the script to merge all the potree octrees into one:
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data1/tiles_potree_merged 
+docker run -v /home/oscar/test_drives/d1:/data1 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data1/tiles_potree_merged 
 ``
+
+Note that in this case we only mount and use one volume. For this specific script it is better to have the same device for both input and output.
