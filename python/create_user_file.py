@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Creates a PC file with a selection of points from a BBox and level"""
 
-import argparse, traceback, time, os, psycopg2
+import argparse, traceback, time, os, psycopg2, datetime
 import utils
 
 # Check the LAStools is installed and that it is in the PATH before libLAS
@@ -31,7 +31,9 @@ def argument_parser():
 def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, baseURL, basePath):
     message = ''
     statusOk = True
-    
+    outputAbsPath = None
+    timeStamp = datetime.datetime.now().strftime("%H_%M_%S_%f")
+
     try:
         # Get the extent of the bounding boxes anc check they are float values
         (minX,minY,maxX,maxY) = bBox.split(',')
@@ -52,12 +54,12 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
                 dbTable = utils.DB_TABLE_POTREE
             else:
                 dbTable = utils.DB_TABLE_RAW
-                print ('Specified level (' + level + ') is not available in the potree data. Using raw data'
+                print 'Specified level (' + level + ') is not available in the potree data. Using raw data'
         else:
             dbTable = utils.DB_TABLE_RAW
             
         
-        outputFileName = '%s_%s_%s_%s_%d.laz' % (minX,minY,maxX,maxY,srid)
+        outputFileName = '%s_%s_%s_%s_%s.laz' % (timeStamp,minX,minY,maxX,maxY)
         outputAbsPath = basePath + '/' + outputFileName
         
         if os.path.isfile(outputAbsPath):
@@ -81,7 +83,7 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         message = 'There was some error in the file generation: ' + traceback.format_exc()
     
     
-    if os.path.isfile(outputAbsPath) and statusOk:
+    if outputAbsPath != None and os.path.isfile(outputAbsPath) and statusOk:
         (count, _, _, _, _, _, _, _, _, _, _, _, _) = utils.getPCFileDetails(outputAbsPath)
         size = utils.getFileSize(outputAbsPath)
         
@@ -100,7 +102,7 @@ Your selection could not be stored. Sorry for the inconveniences."""
 
     content += message
 
-    mailFileAbsPath = outputAbsPath + '.mail'
+    mailFileAbsPath = timeStamp + '_error.mail'
     mailFile = open(mailFileAbsPath, 'w')
     mailFile.write(content)
     mailFile.close()
@@ -110,17 +112,17 @@ Your selection could not be stored. Sorry for the inconveniences."""
 
 if __name__ == "__main__":
     args = argument_parser().parse_args()
-    print 'SRID: ', args.srid
-    print 'E-mail: ', args.mail
+#    print 'SRID: ', args.srid
+#    print 'E-mail: ', args.mail
     print 'Level: ', args.level
     print 'BBox: ', args.bbox
-    print 'DB name: ', args.dbname
-    print 'DB user: ', args.dbuser
-    print 'DB pass: ', '*'*len(args.dbpass)
-    print 'DB host: ', args.dbhost
-    print 'DB port: ', args.dbport
-    print 'Base Web URL: ', args.baseurl
-    print 'Base path: ', args.basepath
+#    print 'DB name: ', args.dbname
+#    print 'DB user: ', args.dbuser
+#    print 'DB pass: ', '*'*len(args.dbpass)
+#    print 'DB host: ', args.dbhost
+#    print 'DB port: ', args.dbport
+#    print 'Base Web URL: ', args.baseurl
+#    print 'Base path: ', args.basepath
     
     try:
         t0 = time.time()

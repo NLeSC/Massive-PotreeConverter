@@ -1,7 +1,6 @@
 # DockertFile for the Massive-PotreeConverter
 FROM ubuntu:14.04
 MAINTAINER Oscar Martinez Rubi <o.rubi@esciencecenter.nl>
-VOLUME ["/data"]
 RUN apt-get update -y
 
 # Install some required packages
