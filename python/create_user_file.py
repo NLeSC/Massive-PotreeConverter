@@ -16,8 +16,8 @@ def argument_parser():
     description="""Creates a PC file with a selection of points from a BBox and level""")
     parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-e','--mail',   default='',help='E-mail address to send e-mail after completion',type=str, required=True)
+    parser.add_argument('-b','--bbox',   default='', help='Bounding box for the points selection given as "minX minY maxX maxY"',required=True,type=str)
     parser.add_argument('-l','--level',  default='',help='Level of data used for the generation (only used if the used table is the one with the potree data). If not provided the raw data is used',type=str)
-    parser.add_argument('-b','--bbox',   default='', help='Bounding box for the points selection given as minX,minY,maxX,maxY',required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
     parser.add_argument('-u','--dbuser', default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass', default='',help='DB pass',type=str)
@@ -36,7 +36,7 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
 
     try:
         # Get the extent of the bounding boxes anc check they are float values
-        (minX,minY,maxX,maxY) = bBox.split(',')
+        (minX,minY,maxX,maxY) = bBox.replace('"','').replace("'","").split(' ')
         for v in (minX,minY,maxX,maxY):
             float(v)
         
@@ -99,12 +99,12 @@ WHERE geom && qgeom AND st_area(geom) != 0""")
         approxStr = ''
         if dbTable == utils.DB_TABLE_POTREE:
             approxStr = """
-Note that due to the large extent of your selected area only the %.2f %% of the points are stored.
-"""  
+Note that due to the large extent of your selected area only the """ + '%.4f' % (float(count)/float(estimatedNumPoints)) + """ %% of the points are stored.
+"""
         
         content = """Subject: Data is ready
 
-Your selected data is ready. %d points were selected and stored in %s with a size of %d MB.
+Your selected data is ready. """ + str(count) + """ points were selected and stored in """ + outputAbsPath.replace(basePath, baseURL) + """ with a size of """ + str(size) + """ MB.
 """ + approxStr + """
 Please download your data asap. This data will be deleted after 24 hours.
 
@@ -114,7 +114,7 @@ For desktop-based simple visualization you can use LAStools lasview.
 
 For web-based visualization you can use http://plas.io/
 
-""" % (count, float(count)/float(estimatedNumPoints), outputAbsPath.replace(basePath, baseURL), size)
+"""
     
     else:
         content = """Subject: Data is NOT ready
