@@ -17,7 +17,7 @@ def argument_parser():
     parser.add_argument('-f','--format',default='',help='Format (LAS or LAZ)',type=str, required=True)
     parser.add_argument('-l','--levels',default='',help='Number of levels for OctTree',type=int, required=True)
     parser.add_argument('-s','--spacing',default='',help='Spacing at root level',type=int, required=True)
-    parser.add_argument('-e','--extent',default='',help='Extent to be used for all the OctTree, specify as minX,minY,minZ,maxX,maxY,maxZ',type=str, required=True)
+    parser.add_argument('-e','--extent',default='',help='Extent to be used for all the OctTree, specify as "minX minY minZ maxX maxY maxZ"',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 
@@ -37,7 +37,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, format, lev
         else:
             tileOutputFolder = outputFolder + '/' + os.path.basename(tileAbsPath)
             os.system('mkdir -p ' + tileOutputFolder)
-            c = 'PotreeConverter --outdir ' + tileOutputFolder +  ' --levels ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' --spacing ' + str(spacing) + ' --aabb "' + (' '.join(extent.split(','))) + '" &> ' + tileOutputFolder + '.log'
+            c = 'PotreeConverter --outdir ' + tileOutputFolder +  ' --levels ' + str(levels) + ' --output-format ' + str(format).upper() + ' --source ' + tileAbsPath + ' --spacing ' + str(spacing) + ' --aabb "' + extent + '" &> ' + tileOutputFolder + '.log'
             utils.shellExecute(c, True)
             resultsQueue.put((processIndex, tileAbsPath)) 
 
