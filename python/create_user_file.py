@@ -58,6 +58,15 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         else:
             dbTable = utils.DB_TABLE_RAW
             
+        estimatedNumPoints = None
+        if dbTable == utils.DB_TABLE_POTREE:
+            cursor.execute("""SELECT 
+   floor(sum(numberpoints * (st_area(st_intersection(geom, qgeom)) / st_area(geom)))) 
+FROM """ + utils.DB_TABLE_RAW + """, (SELECT ST_SetSRID(ST_MakeBox2D(ST_Point(""" + minX + """, """ + minY + """),ST_Point(""" + maxX + """, """ + maxY + """)), """ + str(srid) + """) as qgeom) AS B 
+WHERE geom && qgeom AND st_area(geom) != 0""")
+            estimatedNumPoints = cursor.fetchone()[0] 
+        
+        connection.close()
         
         outputFileName = '%s_%s_%s_%s_%s.laz' % (timeStamp,minX,minY,maxX,maxY)
         outputAbsPath = basePath + '/' + outputFileName
@@ -65,7 +74,7 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         if os.path.isfile(outputAbsPath):
             raise Exception('The file already existed!')
         else:
-            query = 'SELECT filepath FROM ' + dbTable + ' where ST_Intersects(ST_MakeEnvelope(' + minX + ', ' + minY + ', ' + maxX + ', ' + maxY + ', ' + str(srid) + '), geom)'
+            query = 'SELECT filepath FROM ' + dbTable + ' where ST_SetSRID(ST_MakeBox2D(ST_Point(' + minX + ', ' + minY + '),ST_Point(' + maxX + ', ' + maxY + ')), ' + str(srid) + ') && geom'
             if dbTable == utils.DB_TABLE_POTREE:
                 query += ' AND level = ' + str(level)
             
@@ -87,13 +96,25 @@ def run(srid, userMail, level, bBox, dbName, dbPass, dbUser, dbHost, dbPort, bas
         (count, _, _, _, _, _, _, _, _, _, _, _, _) = utils.getPCFileDetails(outputAbsPath)
         size = utils.getFileSize(outputAbsPath)
         
+        approxStr = ''
+        if dbTable == utils.DB_TABLE_POTREE:
+            approxStr = """
+Note that due to the large extent of your selected area only the %.2f %% of the points are stored.
+"""  
+        
         content = """Subject: Data is ready
 
 Your selected data is ready. %d points were selected and stored in %s with a size of %d MB.
-
+""" + approxStr + """
 Please download your data asap. This data will be deleted after 24 hours.
 
-""" % (count, outputAbsPath.replace(basePath, baseURL), size)
+To visualize LAZ data there are a few alternatives. 
+
+For desktop-based simple visualization you can use LAStools lasview.    
+
+For web-based visualization you can use http://plas.io/
+
+""" % (count, float(count)/float(estimatedNumPoints), outputAbsPath.replace(basePath, baseURL), size)
     
     else:
         content = """Subject: Data is NOT ready
