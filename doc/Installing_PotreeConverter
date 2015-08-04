@@ -4,7 +4,8 @@ Potree Converter build instructions
 In addition to liblas and its requirements (proj, tiff, geotiff, gdal and laszip) we also need boost 1.55
 
 For installing liblas and its dependencies as well as boost 1.55 we recommend looking at https://github.com/NLeSC/pointcloud-benchmark/tree/master/install for different methods of installing liblas (and other point cloud related software) in different OSs
- Assuming the code is downloaded in /opt/PotreeConverter/
+git clone https://github.com/oscarmartinezrubiorg/PotreeConverter.git
+# Assuming the code is downloaded in /opt/PotreeConverter/
 cd /opt/PotreeConverter/
 mkdir build
 mkdir makefiles 

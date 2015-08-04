@@ -45,7 +45,7 @@ RUN make; make install
 
 # Install PotreeConverter
 WORKDIR /opt/
-RUN git clone https://github.com/oscarmartinezrubiorg/PotreeConverter.git
+RUN git clone -b develop https://github.com/potree/PotreeConverter.git
 WORKDIR /opt/PotreeConverter/
 RUN mkdir makefiles
 WORKDIR /opt/PotreeConverter/makefiles/

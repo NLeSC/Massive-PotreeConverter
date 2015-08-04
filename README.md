@@ -25,8 +25,6 @@ The following libraries/packages are required:
 
 Python modules: numpy
 
-IMPORTANT: For time being use this [PotreeConverter fork] (https://github.com/oscarmartinezrubiorg/PotreeConverter)
-
 There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
 
 ### Optional
@@ -43,7 +41,8 @@ LAStools closed source which requires licensing required for lassort
 
 ## Installation
 
-Look at the web pages of [PDAL] (http://www.pdal.io/) and [PotreeConverter] (https://github.com/potree/PotreeConverter) to install those.
+Look at the web pages of [PDAL] (http://www.pdal.io/) and [PotreeConverter] (https://github.com/potree/PotreeConverter) to install those. 
+For PotreeConverter the develop branch is currently required.
 
 Note that for closed part of LAStools wine is required. 
 
