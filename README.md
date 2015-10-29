@@ -140,7 +140,7 @@ For that web service also the following repositories where used:
 
 ### Optional steps
 
-7- Index and sort the raw data (we consider raw data the data before the first tiling). Use `sort_index_tiles.py'.
+7- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `sort_index_tiles.py'.
 
 8- Fill a DB with the extents of the files in the raw data
 
@@ -154,9 +154,6 @@ Run the `fill_db_raw.py`.
 
 9- Fill a DB with the extents of the files in the potree octree. 
 Run the `fill_db_potree.py`
-
-After these additional steps you can make selections with level of detail selection. 
-as for instance done in `create_user_file.py`.
 
 ## Docker
 
