@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
-import os, subprocess, struct, numpy, math
+import sys, os, subprocess, struct, numpy, math, multiprocessing
 
 PC_FILE_FORMATS = ['las','laz']
 OCTTREE_NODE_NUM_CHILDREN = 8
@@ -70,7 +70,7 @@ returns a list with only one element, the given file """
             elementAbsPath = os.path.join(inputElementAbsPath,element) 
             if os.path.isdir(elementAbsPath):
                 if recursive:
-                    absPaths.extend(getFiles(elementAbsPath, extensions))
+                    absPaths.extend(getFiles(elementAbsPath, extensions, recursive))
             else: #os.path.isfile(elementAbsPath)
                 isValid = False
                 for extension in extensions:
