@@ -98,7 +98,13 @@ individual potree executions (otherwise they can not be combined).
 Use a combination of spacing (this is defined at root level) and number of 
 levels such as the spacing at the deepest level is similar to the average density
  and the number of points at the root level is not more than 100K points. 
- 
+
+You can use the spreedsheet at `doc/Find_required_spacing_numlevels.ods` to 
+help you with that. Fill-in the extent and number of points of your point cloud. Then, try 
+different spacings at root level and different number of levels until you find
+a combination that guarantees less than 100K points per node and spacing at the deepest level small enough
+for your point density.
+
 For example for our AHN2 massive octree we used 13 levels and a spacing of 1024 
 (meters) at root level which means 1 point per square kilometer at root level. 
 NL has around 40K km2 so this means around 40K points at root level and a 
