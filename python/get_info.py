@@ -8,10 +8,10 @@ numProc = sys.argv[2] #number of processes to use for reading the input path
 #convert to integers
 tminx = int(math.ceil(tminx))
 tminy = int(math.ceil(tminy))
-tminy = int(math.ceil(tminy))
+tminz = int(math.ceil(tminz))
 tmaxx = int(math.floor(tmaxx))
 tmaxy = int(math.floor(tmaxy))
-tmaxy = int(math.floor(tmaxy))
+tmaxz = int(math.floor(tmaxz))
 maxRange = max((tmaxx - tminx, tmaxy - tminy, tmaxz - tminz))
 (minX,minY,minZ,maxX,maxY,maxZ) = (tminx, tminy, tminz, tminx + maxRange, tminy + maxRange, tminz + maxRange)
 density  = float(tcount) / ((tmaxx - tminx)*(tmaxy - tminy)*(tmaxz - tminz))
