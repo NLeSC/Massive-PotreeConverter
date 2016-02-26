@@ -60,21 +60,9 @@ Python folder contained in it into the PYTHONPATH and PATH environment variables
 
 More detailed steps:
 
-1- We get the bounding cube and average density of the massive point cloud. With python:
-```
-import utils
-absPath = '/path/to/your/massive/pc'
-numProc = 32 #number of processes to use for reading the input path
-(_, tcount, tminx, tminy, tminz, tmaxx, tmaxy, tmaxz, _, _, _) = utils.getPCFolderDetails(absPath, numProc)
-maxRange = max((tmaxx - tminx, tmaxy - tminy, tmaxz - tminz))
-(minX,minY,minZ,maxX,maxY,maxZ) = (tminx, tminy, tminz, tminx + maxRange, tminy + maxRange, tminz + maxRange)
-density  = float(tcount) / ((tmaxx - tminx)*(tmaxy - tminy)*(tmaxz - tminz))
-print 'AABB:', minX,minY,minZ,maxX,maxY,maxZ
-print '#Points:', tcount
-print 'Average density:', density
-```
+1- We get the bounding cube and average density of the massive point cloud. We can use get_info.py. First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
 Note that it is a cube, i.e. the axis have the same length. 
-The AABB values must be used in the next steps!
+The CAABB values must be used in the next steps!
 
 2- We use `generate_tiles.py` to create tiles and we use the previous computed 
 bounding box (only X and Y coordinates) in order that the generated tiles nicely
