@@ -60,9 +60,12 @@ Python folder contained in it into the PYTHONPATH and PATH environment variables
 
 More detailed steps:
 
-1- We get the bounding cube and average density of the massive point cloud. We can use get_info.py. First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
+1- We get the bounding cube and average density of the massive point cloud. We can use `get_info.py`. First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
 Note that it is a cube, i.e. the axis have the same length. 
 The CAABB values must be used in the next steps!
+``
+python /path/to/get_info.py -i /path/to/input_data -c [number processes]
+``
 
 2- We use `generate_tiles.py` to create tiles and we use the previous computed 
 bounding box (only X and Y coordinates) in order that the generated tiles nicely
@@ -169,21 +172,26 @@ Or pull the image from Docker Hub:
 
 The following instructions assume that the first option was used. If you pulled the image from Docker you will need to replace the image name.
 
-2 - Run the script to generate tiles:
+2 - Run the script to know the point cloud details, i.e. the CAABB and density:
+``
+docker run -v /home/oscar/test_drives/d1:/data1 oscar/mpc:v1  get_info.py -i /data1/ -c [number processes]
+``
+
+3 - Run the script to generate tiles (use the X,Y values of the CAABB computed in the previous step):
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ahn_bench000020.laz -o /data2/tiles -t /data3/temp -e 85000.0,446250.0,88000.0,449250.0 -n 16 -p 1
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ -o /data2/ -t /data3/ -e "[minX],[minY],[maxX],[maxY]" -n [number tiles] -p [number processes]
 ``
 
 Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/home/oscar/test_drives/d1/myfile` is accessed as `/data1/myfile` in the container.
 
-3- Run the script to generate the potree octree of each tile:
+4- Run the script to generate the potree octree of each tile (we need to use the X,Y,Z values of the CAABB computed before. You also need to compute a optimal spacing and number of levels). You can split the tiles, and run different containers in different systems with different tiles:
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 oscar/mpc:v1 generate_potree.py -i /data2/tiles -o /data1/tiles_potree -f LAZ -l 8 -s 20 -e 85000.0,446250.0,-50,88000.0,449250.0,2950 -c 2
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 oscar/mpc:v1 generate_potree.py -i /data2/ -o /data1/tiles_potree -f LAZ -l [number levels] -s [spacing] -e "[minX],[minY],[minZ],[maxX],[maxY],[maxZ]" -c [number processes]
 ``
 
-4 - Run the script to merge all the potree octrees into one:
+5 - Run the script to merge all the potree octrees into one:
 
 ``
 docker run -v /home/oscar/test_drives/d1:/data1 oscar/mpc:v1 merge_potree_all.py -i /data1/tiles_potree -o /data1/tiles_potree_merged 

@@ -3,6 +3,12 @@ FROM ubuntu:14.04
 MAINTAINER Oscar Martinez Rubi <o.rubi@esciencecenter.nl>
 RUN apt-get update -y
 
+# Add g++4.9 required by PotreeConverter
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test
+RUN apt-get update -y
+RUN apt-get install -y g++-4.9
+
 # Install some required packages
 RUN apt-get install -y wget git cmake g++ cmake-gui cmake-curses-gui zlib1g-dev libncurses5-dev build-essential unzip
 # Install GEOS, PROJ4, TIFF and GEOTIFF
@@ -26,6 +32,7 @@ RUN make; make install
 WORKDIR /opt
 RUN git clone git://github.com/libLAS/libLAS.git liblas
 WORKDIR /opt/liblas/
+RUN git checkout tags/1.8.0
 RUN mkdir makefiles
 WORKDIR /opt/liblas/makefiles/
 RUN wget https://raw.githubusercontent.com/NLeSC/pointcloud-benchmark/master/install/centos7/FindPROJ4.cmake
@@ -43,13 +50,30 @@ WORKDIR /opt/PDAL-trunk/makefiles/
 RUN cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DWITH_APPS=ON -DWITH_GEOTIFF=ON -DWITH_LASZIP=ON -DWITH_TESTS=ON  -DCMAKE_CXX_FLAGS="-std=c++11 -Wl,--no-as-needed -ldl" -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--no-as-needed -ldl" -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--no-as-needed -ldl" -DCMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed -ldl"  
 RUN make; make install
 
+# Change symlinks of gcc/g++ compilers to use 4.9
+RUN rm /usr/bin/gcc
+RUN rm /usr/bin/g++
+RUN ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
+RUN ln -s /usr/bin/g++-4.9 /usr/bin/g++
+
+# Install LASZip from LAStools which is used by PotreeConverter (also requires gcc4.9)
+WORKDIR /opt/
+RUN git clone https://github.com/m-schuetz/LAStools.git lastools
+WORKDIR /opt/lastools/LASzip
+RUN mkdir build
+WORKDIR /opt/lastools/LASzip/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release ..
+RUN make
+
 # Install PotreeConverter
 WORKDIR /opt/
-RUN git clone -b develop https://github.com/potree/PotreeConverter.git
+RUN git clone https://github.com/potree/PotreeConverter.git
 WORKDIR /opt/PotreeConverter/
-RUN mkdir makefiles
-WORKDIR /opt/PotreeConverter/makefiles/
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release 
+RUN mkdir build
+WORKDIR /opt/PotreeConverter/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DLASZIP_INCLUDE_DIRS=/opt/lastools/LASzip/dll -DLASZIP_LIBRARY=/opt/lastools/LASzip/build/src/liblaszip.so ..
+
+# copy ./PotreeConverter/resources/page_template to your binary working directory.
 RUN make; make install
 
 WORKDIR /opt/
@@ -67,6 +91,7 @@ RUN git clone https://github.com/NLeSC/Massive-PotreeConverter.git
 RUN ln -s /opt/LAStools/bin/lasinfo /usr/local/sbin/lasinfo
 RUN ln -s /opt/LAStools/bin/lasmerge /usr/local/sbin/lasmerge
     
+RUN ln -s /opt/Massive-PotreeConverter/python/get_info.py /usr/local/sbin/get_info.py
 RUN ln -s /opt/Massive-PotreeConverter/python/generate_tiles.py /usr/local/sbin/generate_tiles.py
 RUN ln -s /opt/Massive-PotreeConverter/python/merge_potree.py /usr/local/sbin/merge_potree.py
 RUN ln -s /opt/Massive-PotreeConverter/python/generate_potree.py /usr/local/sbin/generate_potree.py
