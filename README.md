@@ -79,7 +79,7 @@ bounding box, the extents of the tiles will match the extent of the OctTree
 nodes at a certain level (and thus the future merging will be done faster)
 
 ``
-python /path/to/generate_tiles.py -i /path/to/input_data -o /path/to/output -t /path/to/temp_folder -e "[minX],[minY],[maxX],[maxY]" -n [number tiles] -p [number processes]
+python /path/to/generate_tiles.py -i /path/to/input_data -o /path/to/output -t /path/to/temp_folder -e "[minX] [minY] [maxX] [maxY]" -n [number tiles] -p [number processes]
 ``
 
 
@@ -180,7 +180,7 @@ docker run -v /home/oscar/test_drives/d1:/data1 oscar/mpc:v1  get_info.py -i /da
 3 - Run the script to generate tiles (use the X,Y values of the CAABB computed in the previous step):
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ -o /data2/ -t /data3/ -e "[minX],[minY],[maxX],[maxY]" -n [number tiles] -p [number processes]
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 -v /home/oscar/test_drives/d3:/data3 oscar/mpc:v1 generate_tiles.py -i /data1/ -o /data2/ -t /data3/ -e "[minX] [minY] [maxX] [maxY]" -n [number tiles] -p [number processes]
 ``
 
 Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/home/oscar/test_drives/d1/myfile` is accessed as `/data1/myfile` in the container.
@@ -188,7 +188,7 @@ Note that we specify 3 different local folders which will be available in the do
 4- Run the script to generate the potree octree of each tile (we need to use the X,Y,Z values of the CAABB computed before. You also need to compute a optimal spacing and number of levels). You can split the tiles, and run different containers in different systems with different tiles:
 
 ``
-docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 oscar/mpc:v1 generate_potree.py -i /data2/ -o /data1/tiles_potree -f LAZ -l [number levels] -s [spacing] -e "[minX],[minY],[minZ],[maxX],[maxY],[maxZ]" -c [number processes]
+docker run -v /home/oscar/test_drives/d1:/data1 -v /home/oscar/test_drives/d2:/data2 oscar/mpc:v1 generate_potree.py -i /data2/ -o /data1/tiles_potree -f LAZ -l [number levels] -s [spacing] -e "[minX] [minY] [minZ] [maxX] [maxY] [maxZ]" -c [number processes]
 ``
 
 5 - Run the script to merge all the potree octrees into one:

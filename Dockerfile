@@ -56,24 +56,14 @@ RUN rm /usr/bin/g++
 RUN ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
 RUN ln -s /usr/bin/g++-4.9 /usr/bin/g++
 
-# Install LASZip from LAStools which is used by PotreeConverter (also requires gcc4.9)
-WORKDIR /opt/
-RUN git clone https://github.com/m-schuetz/LAStools.git lastools
-WORKDIR /opt/lastools/LASzip
-RUN mkdir build
-WORKDIR /opt/lastools/LASzip/build
-RUN cmake -DCMAKE_BUILD_TYPE=Release ..
-RUN make
-
 # Install PotreeConverter
 WORKDIR /opt/
 RUN git clone https://github.com/potree/PotreeConverter.git
 WORKDIR /opt/PotreeConverter/
+RUN git checkout tags/1.3_alpha_c++14
 RUN mkdir build
 WORKDIR /opt/PotreeConverter/build
-RUN cmake -DCMAKE_BUILD_TYPE=Release -DLASZIP_INCLUDE_DIRS=/opt/lastools/LASzip/dll -DLASZIP_LIBRARY=/opt/lastools/LASzip/build/src/liblaszip.so ..
-
-# copy ./PotreeConverter/resources/page_template to your binary working directory.
+RUN cmake -DCMAKE_BUILD_TYPE=Release  ..
 RUN make; make install
 
 WORKDIR /opt/
