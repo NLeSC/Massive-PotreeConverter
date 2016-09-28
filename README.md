@@ -78,17 +78,16 @@ looking at the guidelines in https://github.com/NLeSC/pointcloud-benchmark/tree/
 
 More detailed steps:
 
-- We get the bounding cube and average density of the massive point cloud. We can use `mpc-info`.
+- We get the bounding cube, the number of points and the average density of the massive point cloud. We can use `mpc-info`.
 First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
-Note that it is a cube, i.e. the axis have the same length.
-The CAABB values must be used in the next steps!
+The tool also computes suggested values for the Cubic Axis Aligned Bounding Box (CAABB), the spacing and the number of levels. These three values must be used in the next steps!
 ```
 mpc-info -i /path/to/input_data -c [number processes]
 ```
 
 - We use `mpc-tiling` to create tiles and we use the previous computed
-bounding box (only X and Y coordinates) in order that the generated tiles nicely
- fit with the octree structure that we are trying to create.
+CAABB (only X and Y coordinates) in order that the generated tiles nicely
+ fit with the OctTree structure that we are trying to create.
 
 Depending on how big it is we need to use more or less number of tiles.
 It is recommended to use a number such that each tile has no more that 5 billion
@@ -102,7 +101,7 @@ mpc-tiling -i /path/to/input_data -o /path/to/output -t /path/to/temp_folder -e 
 ```
 
 - Run the individual PotreeConverters for each tile using ALWAYS the same
-previously computed AABB and the selected  spacing and number of levels.
+previously computed CAABB, spacing and number of levels.
 
 Use `mpc-create-config-pycoeman` to create a XML with the list of PotreeConverter commands that have to be executed.
 The format used is the parallel commands XML configuration file format for pycoeman.
@@ -111,33 +110,15 @@ Then run any of the pycoeman tools to execute the commands. There are options to
 
 In all cases it is not recommended to use more than 8 cores per machine since the processing is quite IO-bound.
 
-  - IMPORTANT: Before running `mpc-create-config-pycoeman` we need to determine
-  a number of levels and spacing that will be used by ALL the PotreeConverter executions.
-  In order to be able to combine various Potree-OctTrees they must be created
-  with the same CAABB, number of levels and spacing.
-  Use a combination of spacing (this is defined at root level) and number of
-  levels such as the spacing at the deepest level is similar to the average density
-  and the number of points at the root level is not more than 100K points.
-  You can use the spreedsheet at `doc/Find_required_spacing_numlevels.ods` to
-  help you with that. Fill-in the extent and number of points of your point cloud. Then, try
-  different spacings at root level and different number of levels until you find
-  a combination that guarantees less than 100K points per node and spacing at the deepest level small enough
-  for your point density.
-  For example for our AHN2 massive Potree-OctTree we used 13 levels and a spacing of 1024
-  (meters) at root level which means 1 point per square kilometer at root level.
-  NL has around 40K km2 so this means around 40K points at root level and a
-  spacing of 0.125 at level 13.
-
 - After the various Potree-OctTrees are created (one per tile) we need to merge them
-into a single one. For this you need to use the `merge_potree.py` script which
-joins two potree octrees into one.
+into a single one. For this you need to use the `mpc-merge` tool which
+joins two Potree-OctTrees into one.
 
-You need to run different iterations until there is only one potree octree
-The script `merge_potree_all.py` can be used to merged all the potree octrees into one
+You need to run different iterations until there is only one Potree-OctTree
+The script `mpc-merge-all` can be used to merged all the Potree-OctTrees into one
 but this has to be used carefully.
 
 You have a single massive potree octree! Enjoy it!
-
 
 See an example in [AHN2](http://ahn2.pointclouds.nl).
 
