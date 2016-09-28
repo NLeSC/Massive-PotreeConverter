@@ -17,15 +17,13 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
         # Check if there is data in this node in Octtree A (we check if the HRC file for this node exist)
         hrcA = utils.readHRC(nodeAbsPathA + '/' + hrcFile, hierarchyStepSize)
         if len(os.listdir(nodeAbsPathA)) == 2:
-            c = utils.getPCFileDetails(nodeAbsPathA + '/' + node + extension)[0]
-            hrcA[0][0] = c
+            hrcA[0][0] = utils.getPCFileDetails(nodeAbsPathA + '/' + node + extension)[0]
     hrcB = None
     if os.path.isfile(nodeAbsPathB + '/' + hrcFile):
         # Check if there is data in this node in Octtree B (we check if the HRC file for this node exist)
         hrcB = utils.readHRC(nodeAbsPathB + '/' + hrcFile, hierarchyStepSize)
         if len(os.listdir(nodeAbsPathB)) == 2:
-            c = utils.getPCFileDetails(nodeAbsPathB + '/' + node + extension)[0]
-            hrcB[0][0] = c
+            hrcB[0][0] = utils.getPCFileDetails(nodeAbsPathB + '/' + node + extension)[0]
 
     if hrcA != None and hrcB != None:
         utils.shellExecute('mkdir -p ' + nodeAbsPathO)

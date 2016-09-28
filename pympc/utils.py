@@ -242,7 +242,7 @@ def getNodeName(level, i, parentName, hierarchyStepSize, extension):
     name_sub = ''
     if level:
         for l in range(level-1)[::-1]:
-            name_sub += str((i / int(math.pow(OCTTREE_NODE_NUM_CHILDREN,l+1))) % OCTTREE_NODE_NUM_CHILDREN)
+            name_sub += str((int(i / int(math.pow(OCTTREE_NODE_NUM_CHILDREN,l+1)))) % OCTTREE_NODE_NUM_CHILDREN)
         name_sub += str(i % OCTTREE_NODE_NUM_CHILDREN)
         if level < hierarchyStepSize:
             return (parentName + name_sub + '.' + extension, True)
