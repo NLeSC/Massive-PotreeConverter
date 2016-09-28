@@ -12,16 +12,12 @@ DB_TABLE_POTREE_DIST = 'potree_dist'
 
 def shellExecute(command, showOutErr = False):
     """ Execute the command in the SHELL and shows both stdout and stderr"""
-    print command
+    print(command)
     (out,err) = subprocess.Popen(command, shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    r = '\n'.join((out,err))
+    r = '\n'.join((out.decode("utf-8") , err.decode("utf-8")))
     if showOutErr:
-        print r
+        print(r)
     return r
-
-# Check the LAStools is installed and that it is in PATH before libLAS
-if shellExecute('lasinfo -version').count('LAStools') == 0:
-    raise Exception("LAStools is not found!. Please check that it is in PATH and that it is before libLAS")
 
 def getUserName():
     return os.popen('whoami').read().replace('\n','')
@@ -30,7 +26,7 @@ def getConnectString(dbName = None, userName= None, password = None, dbHost = No
     """ Gets the connection string to be used by psycopg2 (if cline is False)
     or by psql (if cline is True)"""
     connString=''
-    if cline:    
+    if cline:
         if dbName != None and dbName != '':
             connString += " " + dbName
         if userName != None and userName != '':
@@ -55,8 +51,8 @@ def getConnectString(dbName = None, userName= None, password = None, dbHost = No
     return connString
 
 def getFiles(inputElement, extensions = PC_FILE_FORMATS, recursive = False):
-    """ Get the list of files with certain extensions contained in the folder (and possible 
-subfolders) given by inputElement. If inputElement is directly a file it 
+    """ Get the list of files with certain extensions contained in the folder (and possible
+subfolders) given by inputElement. If inputElement is directly a file it
 returns a list with only one element, the given file """
     # If extensions is not a list but a string we converted to a list
     if type(extensions) == str:
@@ -67,7 +63,7 @@ returns a list with only one element, the given file """
         elements = sorted(os.listdir(inputElementAbsPath), key=str.lower)
         absPaths=[]
         for element in elements:
-            elementAbsPath = os.path.join(inputElementAbsPath,element) 
+            elementAbsPath = os.path.join(inputElementAbsPath,element)
             if os.path.isdir(elementAbsPath):
                 if recursive:
                     absPaths.extend(getFiles(elementAbsPath, extensions, recursive))
@@ -88,8 +84,8 @@ returns a list with only one element, the given file """
             return [inputElementAbsPath,]
     else:
         raise Exception("ERROR: inputElement is neither a valid folder nor file")
-    return []    
-        
+    return []
+
 def getPCFileDetails(absPath):
     """ Get the details (count numPoints and extent) of a LAS/LAZ file (using LAStools, hence it is fast)"""
     count = None
@@ -128,29 +124,29 @@ def getPCFolderDetails(absPath, numProc = 1):
     tcount = 0
     (tminx, tminy, tminz, tmaxx, tmaxy, tmaxz) =  (None, None, None, None, None, None)
     (tscalex, tscaley, tscalez) = (None, None, None)
-    
+
     if os.path.isdir(absPath):
         inputFiles = getFiles(absPath, recursive=True)
     else:
         inputFiles = [absPath,]
-    
+
     numInputFiles = len(inputFiles)
-        
+
     tasksQueue = multiprocessing.Queue() # The queue of tasks
     detailsQueue = multiprocessing.Queue() # The queue of results/details
-    
+
     for i in range(numInputFiles):
         tasksQueue.put(inputFiles[i])
     for i in range(numProc): #we add as many None jobs as numProc to tell them to terminate (queue is FIFO)
         tasksQueue.put(None)
-    
+
     workers = []
     # We start numProc users workers
     for i in range(numProc):
-        workers.append(multiprocessing.Process(target=runProcGetPCFolderDetailsWorker, 
+        workers.append(multiprocessing.Process(target=runProcGetPCFolderDetailsWorker,
             args=(tasksQueue, detailsQueue)))
         workers[-1].start()
-        
+
     for i in range(numInputFiles):
         sys.stdout.write('\r')
         (count, minx, miny, minz, maxx, maxy, maxz, scalex, scaley, scalez, _, _, _) = detailsQueue.get()
@@ -160,7 +156,7 @@ def getPCFolderDetails(absPath, numProc = 1):
         tcount += count
         if count:
             if tminx == None or minx < tminx:
-                tminx = minx 
+                tminx = minx
             if tminy == None or miny < tminy:
                 tminy = miny
             if tminz == None or minz < tminz:
@@ -175,12 +171,12 @@ def getPCFolderDetails(absPath, numProc = 1):
         sys.stdout.flush()
     sys.stdout.write('\r')
     sys.stdout.write('\rCompleted 100.00%!')
-    
+
     # wait for all users to finish their execution
     for i in range(numProc):
         workers[i].join()
-    
-    print
+
+    print()
     return (inputFiles, tcount, tminx, tminy, tminz, tmaxx, tmaxy, tmaxz, tscalex, tscaley, tscalez)
 
 def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue):
@@ -195,19 +191,19 @@ def runProcGetPCFolderDetailsWorker(tasksQueue, detailsQueue):
             kill_received = True
         if job == None:
             kill_received = True
-        else:            
+        else:
             detailsQueue.put(getPCFileDetails(job))
 
-            
+
 def getNode(binaryFile, level, data, lastInLevel, hierarchyStepSize):
-    # Read a node from the binary file 
+    # Read a node from the binary file
     b = struct.unpack('B', binaryFile.read(1))[0]
     n = struct.unpack('I', binaryFile.read(4))[0]
-    
+
     for i in range(OCTTREE_NODE_NUM_CHILDREN):
         # We will store a positive number if the child i exists, 0 otherwise
         data[level].append((1<<i) & b)
-    
+
     if lastInLevel and level < (hierarchyStepSize+1): # If we have finished with current level and not in last level we go one more level deep
         if sum(data[level]):
             lastInNextLevel = (len(data[level]) - 1) - list(numpy.array(data[level]) > 0)[::-1].index(True) # We get the index of the last node in the next level which has data
@@ -227,7 +223,7 @@ def initHRC(hierarchyStepSize):
 def readHRC(hrcFileAbsPath, hierarchyStepSize):
     data = initHRC(hierarchyStepSize)
     data[0].append(getNode(open(hrcFileAbsPath, "rb"), 1, data, True, hierarchyStepSize))
-    return data   
+    return data
 
 def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
     oFile = open(hrcFileAbsPath, "wb")
@@ -241,7 +237,7 @@ def writeHRC(hrcFileAbsPath, hierarchyStepSize, data):
                         mask += 1<<k
                 oFile.write(struct.pack('B', mask) + struct.pack('I', data[i][j]))
     oFile.close()
-    
+
 def getNodeName(level, i, parentName, hierarchyStepSize, extension):
     name_sub = ''
     if level:

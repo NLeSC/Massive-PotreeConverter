@@ -29,6 +29,8 @@ The following libraries/packages are required for the basic components of Massiv
 
 [PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (only open-source).
 
+Concretelly the following command-line tools must be available: pdal, PotreeConverter, coeman-par-local (or coeman-par-sge or coeman-par-ssh), lasinfo and lasmerge
+
 For now Massive-PotreeConverter works only in Linux systems. Requires Python 3.5.
 
 There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
@@ -60,37 +62,31 @@ In order to perform the additional components some additional libraries/packages
   - Python modules: psycopg2
 
 - To sort/index LAS/LAZ files in parallel (allowing faster selection), the additional requirements are:
-  - LAStools with license
+  - LAStools with license. For the licensed-part of LAStools to run in Linux environments wine (https://www.winehq.org/) needs to be installed
 
-## Installation
+### Installation tips
 
-Look at the web pages of [PDAL] (http://www.pdal.io/) and [PotreeConverter] (https://github.com/potree/PotreeConverter) to install those.
-For PotreeConverter the develop branch is currently required.
+For the installation of PotreeConverter look at https://github.com/potree/PotreeConverter. You will need to add the build executable manually to the PATH.
 
-Note that for closed part of LAStools wine is required.
+Look at the web page of [PDAL] (http://www.pdal.io/compilation/unix.html) to install it. You will need to install also GDAL, Geos, GeoTiff and LASzip. Note that for Massive-PotreeConverter there is no need to build PDAL with PostgreSQL support.
 
 For the installation of LAStools, PostgreSQL, PostGIS and PDAL we recommend
 looking at the guidelines in https://github.com/NLeSC/pointcloud-benchmark/tree/master/install
 
-When installing PotreeConverter there may be some issues if you have custom
-builds of some of the libraries.
-Look at [doc/Installing_PotreeConverter] (https://github.com/NLeSC/Massive-PotreeConverter/blob/master/doc/Installing_PotreeConverter)
-
-Once the requirements are installed just clone this repository and add the
-Python folder contained in it into the PYTHONPATH and PATH environment variables
 
 ## Method
 
 More detailed steps:
 
-1- We get the bounding cube and average density of the massive point cloud. We can use `get_info.py`. First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
+- We get the bounding cube and average density of the massive point cloud. We can use `mpc-info`.
+First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
 Note that it is a cube, i.e. the axis have the same length.
 The CAABB values must be used in the next steps!
-``
-python /path/to/get_info.py -i /path/to/input_data -c [number processes]
-``
+```
+mpc-info -i /path/to/input_data -c [number processes]
+```
 
-2- We use `generate_tiles.py` to create tiles and we use the previous computed
+- We use `mpc-tiling` to create tiles and we use the previous computed
 bounding box (only X and Y coordinates) in order that the generated tiles nicely
  fit with the octree structure that we are trying to create.
 
@@ -101,42 +97,38 @@ Use a number of tiles that is power of 4, in this way a thanks to the used
 bounding box, the extents of the tiles will match the extent of the OctTree
 nodes at a certain level (and thus the future merging will be done faster)
 
-``
-python /path/to/generate_tiles.py -i /path/to/input_data -o /path/to/output -t /path/to/temp_folder -e "[minX] [minY] [maxX] [maxY]" -n [number tiles] -p [number processes]
-``
+```
+mpc-tiling -i /path/to/input_data -o /path/to/output -t /path/to/temp_folder -e "[minX] [minY] [maxX] [maxY]" -n [number tiles] -p [number processes]
+```
 
-
-3- Determine a number of levels and spacing to be used by ALL the PotreeConverter executions.
-This is important that is pre-computed and always use these same values for the
-individual potree executions (otherwise they can not be combined).
-Use a combination of spacing (this is defined at root level) and number of
-levels such as the spacing at the deepest level is similar to the average density
- and the number of points at the root level is not more than 100K points.
-
-You can use the spreedsheet at `doc/Find_required_spacing_numlevels.ods` to
-help you with that. Fill-in the extent and number of points of your point cloud. Then, try
-different spacings at root level and different number of levels until you find
-a combination that guarantees less than 100K points per node and spacing at the deepest level small enough
-for your point density.
-
-For example for our AHN2 massive octree we used 13 levels and a spacing of 1024
-(meters) at root level which means 1 point per square kilometer at root level.
-NL has around 40K km2 so this means around 40K points at root level and a
-spacing of 0.125 at level 13.
-
-4- Run the individual PotreeConverters for each tile using ALWAYS the same
+- Run the individual PotreeConverters for each tile using ALWAYS the same
 previously computed AABB and the selected  spacing and number of levels.
 
-For this you can:
-  - Use the the `generate_potree.py` script which is meant to run a in a single machine.  
-  - If you run in a cluster of machines you can use scripts similar to the one
-  in the python/das folder to distribute the generation of potrees octrees in
-  different machines.
+Use `mpc-create-config-pycoeman` to create a XML with the list of PotreeConverter commands that have to be executed.
+The format used is the parallel commands XML configuration file format for pycoeman.
 
-In both cases it is not recommended to use more than 8 cores per machine since
-the processing is quite IO-bound.
+Then run any of the pycoeman tools to execute the commands. There are options to run them locally, in a SGE cluster or in a bunch of ssh-reachable hosts.
 
-5- After the different potree octrees are created we need to merge them
+In all cases it is not recommended to use more than 8 cores per machine since the processing is quite IO-bound.
+
+  - IMPORTANT: Before running `mpc-create-config-pycoeman` we need to determine
+  a number of levels and spacing that will be used by ALL the PotreeConverter executions.
+  In order to be able to combine various Potree-OctTrees they must be created
+  with the same CAABB, number of levels and spacing.
+  Use a combination of spacing (this is defined at root level) and number of
+  levels such as the spacing at the deepest level is similar to the average density
+  and the number of points at the root level is not more than 100K points.
+  You can use the spreedsheet at `doc/Find_required_spacing_numlevels.ods` to
+  help you with that. Fill-in the extent and number of points of your point cloud. Then, try
+  different spacings at root level and different number of levels until you find
+  a combination that guarantees less than 100K points per node and spacing at the deepest level small enough
+  for your point density.
+  For example for our AHN2 massive Potree-OctTree we used 13 levels and a spacing of 1024
+  (meters) at root level which means 1 point per square kilometer at root level.
+  NL has around 40K km2 so this means around 40K points at root level and a
+  spacing of 0.125 at level 13.
+
+- After the various Potree-OctTrees are created (one per tile) we need to merge them
 into a single one. For this you need to use the `merge_potree.py` script which
 joins two potree octrees into one.
 
@@ -144,7 +136,9 @@ You need to run different iterations until there is only one potree octree
 The script `merge_potree_all.py` can be used to merged all the potree octrees into one
 but this has to be used carefully.
 
-6- You have a single massive potree octree! Enjoy it!
+You have a single massive potree octree! Enjoy it!
+
+
 See an example in [AHN2](http://ahn2.pointclouds.nl).
 
 For that web service also the following repositories where used:
@@ -154,19 +148,18 @@ For that web service also the following repositories where used:
 
 ### Optional steps
 
-7- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `sort_index_tiles.py'.
+- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `sort_index_tiles.py`.
 
-8- Fill a DB with the extents of the files in the raw data
+- Fill a DB with the extents of the files in the raw data
 
-``
+```
 createdb extents
 psql extents -c "create extension postgis"
-``
-
+```
 
 Run the `fill_db_raw.py`.
 
-9- Fill a DB with the extents of the files in the potree octree.
+- Fill a DB with the extents of the files in the potree octree.
 Run the `fill_db_potree.py`
 
 ## Docker

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import argparse
+import argparse, os
 from lxml import etree
 
 def run(inputFolder, outputFile, outputFormat, levels, spacing, extent):
@@ -15,32 +15,35 @@ def run(inputFolder, outputFile, outputFormat, levels, spacing, extent):
     xmlRootElement = etree.Element('ParCommands')
 
     for tile in os.listdir(inputFolder):
-        tileRelPath = inputFolder + '/' + tile
 
-        xmlComponentElement = etree.SubElement(xmlRootElement, 'Component')
+        if tile != 'tiles.js':
+        
+            tileRelPath = inputFolder + '/' + tile
 
-        xmlIdElement = etree.SubElement(xmlComponentElement, 'id')
-        xmlIdElement.text = tile + '_potree_converter'
+            xmlComponentElement = etree.SubElement(xmlRootElement, 'Component')
 
-        xmlRequireElement = etree.SubElement(xmlRootElement, 'require')
-        xmlRequireElement.text = tileRelPath
+            xmlIdElement = etree.SubElement(xmlComponentElement, 'id')
+            xmlIdElement.text = tile + '_potree_converter'
 
-        localOutputFolder = tile + '_potree'
+            xmlRequireElement = etree.SubElement(xmlComponentElement, 'require')
+            xmlRequireElement.text = tileRelPath
 
-        xmlCommandElement = etree.SubElement(xmlRootElement, 'command')
-        xmlCommandElement.text = 'PotreeConverter --outdir ' + localOutputFolder + ' --levels ' + str(levels) + ' --output-format ' + str(outputFormat).upper() + ' --source ' + tile + ' --spacing ' + str(spacing) + ' --aabb "' + extent + '"'
+            localOutputFolder = tile + '_potree'
 
-        xmlOutputElement = etree.SubElement(xmlRootElement, 'output')
-        xmlOutputElement.text = localOutputFolder
+            xmlCommandElement = etree.SubElement(xmlComponentElement, 'command')
+            xmlCommandElement.text = 'PotreeConverter --outdir ' + localOutputFolder + ' --levels ' + str(levels) + ' --output-format ' + str(outputFormat).upper() + ' --source ' + tile + ' --spacing ' + str(spacing) + ' --aabb "' + extent + '"'
 
-    oFile.write(etree.tostring(rootOutput, pretty_print=True, encoding='utf-8').decode('utf-8'))
+            xmlOutputElement = etree.SubElement(xmlComponentElement, 'output')
+            xmlOutputElement.text = localOutputFolder
+
+    oFile.write(etree.tostring(xmlRootElement, pretty_print=True, encoding='utf-8').decode('utf-8'))
     oFile.close()
 
 
 def argument_parser():
    # define argument menu
     parser = argparse.ArgumentParser(
-    description="Creates a parallel commands XML configuration file. This XML file can be used with pycoeman to run the tasks in a SGE cluster, in a bunch of ssh-reachable hosts or in the local machine"
+    description="Creates a parallel commands XML configuration file. This XML file can be used with pycoeman to run the tasks in a SGE cluster, in a bunch of ssh-reachable hosts or in the local machine")
     parser.add_argument('-i','--input',default='',help='Input folder with the tiles. This folder must contain subfolders, one for each tile. Each tile subfolder must contain the LAS/LAZ files in the tile',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output parallel commands XML configuration file',type=str, required=True)
     parser.add_argument('-f','--format',default='',help='Format (LAS or LAZ)',type=str, required=True)
@@ -51,13 +54,6 @@ def argument_parser():
 
 def main():
     args = argument_parser().parse_args()
-    print 'Input folder: ', args.input
-    print 'Output file: ', args.output
-    print 'Format: ', args.format
-    print 'Levels: ', args.levels
-    print 'Spacing: ', args.spacing
-    print 'Extent: ', args.extent
-
     run(args.input, args.output, args.format, args.levels, args.spacing, args.extent)
 
 if __name__ == "__main__":

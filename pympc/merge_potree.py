@@ -2,21 +2,8 @@
 """Merge two Potree OctTrees into a single one."""
 
 import argparse, traceback, time, os, json, numpy
-import utils
+from pympc import utils
 
-# Check the LAStools is installed and that it is in the PATH before libLAS
-if utils.shellExecute('lasmerge -version').count('LAStools') == 0:
-    raise Exception("LAStools lasmerge is not found!. Please check that it is in PATH and that it is before libLAS binaries")
-
-def argument_parser():
-    """ Define the arguments and return the parser object"""
-    parser = argparse.ArgumentParser(
-    description="Merge two Potree OctTrees into a single one")
-    parser.add_argument('-a','--inputa',default='',help='Input Potree OctTree A',type=str, required=True)
-    parser.add_argument('-b','--inputb',default='',help='Input Potree OctTree B',type=str, required=True)
-    parser.add_argument('-o','--output',default='',help='Output Potree OctTree',type=str, required=True)
-    parser.add_argument('-m','--move',help='Use mv instead of cp when creating the output octtree. In this case the input data is partially dropped (but process may be faster due to less required IO) [default False]',default=False,action='store_true')
-    return parser
 
 def fixHeader(inputFile, outputFile):
     (_, minX, minY, minZ, maxX, maxY, maxZ, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
@@ -39,7 +26,7 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
         if len(os.listdir(nodeAbsPathB)) == 2:
             c = utils.getPCFileDetails(nodeAbsPathB + '/' + node + extension)[0]
             hrcB[0][0] = c
-    
+
     if hrcA != None and hrcB != None:
         utils.shellExecute('mkdir -p ' + nodeAbsPathO)
         # If both Octtrees A and B have data in this node we have to merge them
@@ -73,7 +60,7 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
                     else:
                         hrcO[level].append(0)
             else:
-                hrcO[level] = list(numpy.array(hrcA[level] + ([0]*(numChildrenO - numChildrenA))) + numpy.array(hrcB[level] + ([0]*(numChildrenO - numChildrenB))))            
+                hrcO[level] = list(numpy.array(hrcA[level] + ([0]*(numChildrenO - numChildrenA))) + numpy.array(hrcB[level] + ([0]*(numChildrenO - numChildrenB))))
         # Write the HRC file
         utils.writeHRC(nodeAbsPathO + '/' + hrcFile, hierarchyStepSize, hrcO)
     elif hrcA != None:
@@ -85,23 +72,23 @@ def joinNode(node, nodeAbsPathA, nodeAbsPathB, nodeAbsPathO, hierarchyStepSize, 
 
 def createCloudJS(cloudJSA, cloudJSB, cloudJSO):
     result = False # Is the data properly merged
-    
+
     cloudJSDataA = json.loads(open(cloudJSA, 'r').read())
     cloudJSDataB = json.loads(open(cloudJSB, 'r').read())
-    
+
     cloudJSDataO = {}
     # Compare fields in the input cloud.js's that should be equal
     # We also write the fields in the output cloud.js
-    for equalField in ["version", "octreeDir", "boundingBox", "pointAttributes", "spacing", "scale", "hierarchyStepSize"]:    
+    for equalField in ["version", "octreeDir", "boundingBox", "pointAttributes", "spacing", "scale", "hierarchyStepSize"]:
         if cloudJSDataA[equalField] == cloudJSDataB[equalField]:
              cloudJSDataO[equalField] = cloudJSDataA[equalField]
         else:
             raise Exception('Error: Can not join cloud.js. Distinct ' + equalField + '!')
-    
+
     # For the field "tightBoundingBox" we need to merge them since they can be different
     tbbA = cloudJSDataA["tightBoundingBox"]
     tbbB = cloudJSDataB["tightBoundingBox"]
-    
+
     tbbO = {}
     tbbO["lx"] = min([tbbA["lx"], tbbB["lx"]])
     tbbO["ly"] = min([tbbA["ly"], tbbB["ly"]])
@@ -110,13 +97,13 @@ def createCloudJS(cloudJSA, cloudJSB, cloudJSO):
     tbbO["uy"] = max([tbbA["uy"], tbbB["uy"]])
     tbbO["uz"] = max([tbbA["uz"], tbbB["uz"]])
     cloudJSDataO["tightBoundingBox"] = tbbO
-    
+
     hierarchyStepSize = cloudJSDataA['hierarchyStepSize']
-    
+
     cloudJSOFile = open(cloudJSO, 'w')
     cloudJSOFile.write(json.dumps(cloudJSDataO, indent=4))
     cloudJSOFile.close()
-     
+
     return hierarchyStepSize
 
 def run(inputFolderA, inputFolderB, outputFolder, moveFiles):
@@ -127,34 +114,34 @@ def run(inputFolderA, inputFolderB, outputFolder, moveFiles):
         raise Exception('Error: There is a file with the same name as the output folder. Please, delete it!')
     elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
         raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
-    
+
     # Make the paths absolute path
     inputFolderA = os.path.abspath(inputFolderA)
     inputFolderB = os.path.abspath(inputFolderB)
     outputFolder = os.path.abspath(outputFolder)
-    
+
     if moveFiles:
         cmcommand = 'mv '
     else:
         cmcommand = 'cp -r '
-    
+
     dataA = inputFolderA + '/data'
     dataB = inputFolderB + '/data'
     dataO = outputFolder + '/data'
-    
+
     # Check if the octtrees have actual data (i.e. one folder with the root node)
-    hasNodeA = os.listdir(dataA) == ['r',] 
-    hasNodeB = os.listdir(dataB) == ['r',] 
-    
+    hasNodeA = os.listdir(dataA) == ['r',]
+    hasNodeB = os.listdir(dataB) == ['r',]
+
     if hasNodeA or hasNodeB:
         utils.shellExecute('mkdir -p ' + outputFolder)
         if hasNodeA and hasNodeB:
             # If both Octrees have data we need to merge them
-            # Create output cloud.js from joining the two input ones 
+            # Create output cloud.js from joining the two input ones
             cloudJSA = inputFolderA + '/cloud.js'
             cloudJSB = inputFolderB + '/cloud.js'
             if not (os.path.isfile(cloudJSA)) or not (os.path.isfile(cloudJSB)):
-                raise Exception('Error: Some cloud.js is missing!')  
+                raise Exception('Error: Some cloud.js is missing!')
             # We also get the hierarchyStepSize
             hierarchyStepSize = createCloudJS(cloudJSA, cloudJSB, outputFolder + '/cloud.js')
             listFileRootA =  os.listdir(dataA + '/r')
@@ -168,22 +155,35 @@ def run(inputFolderA, inputFolderB, outputFolder, moveFiles):
         elif hasA:
             utils.shellExecute(cmcommand + inputFolderA + '/* ' + outputFolder)
         else:
-            utils.shellExecute(cmcommand + inputFolderB + '/* ' + outputFolder)            
+            utils.shellExecute(cmcommand + inputFolderB + '/* ' + outputFolder)
     else:
-        print 'Nothing to merge: both Octtrees are empty!'
+        print ('Nothing to merge: both Octtrees are empty!')
 
-if __name__ == "__main__":
+def argument_parser():
+    """ Define the arguments and return the parser object"""
+    parser = argparse.ArgumentParser(
+    description="Merge two Potree OctTrees into a single one")
+    parser.add_argument('-a','--inputa',default='',help='Input Potree OctTree A',type=str, required=True)
+    parser.add_argument('-b','--inputb',default='',help='Input Potree OctTree B',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output Potree OctTree',type=str, required=True)
+    parser.add_argument('-m','--move',help='Use mv instead of cp when creating the output octtree. In this case the input data is partially dropped (but process may be faster due to less required IO) [default False]',default=False,action='store_true')
+    return parser
+
+def main():
     args = argument_parser().parse_args()
-    print 'Input Potree Octtree A: ', args.inputa
-    print 'Input Potree Octtree B: ', args.inputb
-    print 'Output Potree Octtree: ', args.output
-    print 'Move: ', args.move
-    
+    print ('Input Potree Octtree A: ', args.inputa)
+    print ('Input Potree Octtree B: ', args.inputb)
+    print ('Output Potree Octtree: ', args.output)
+    print ('Move: ', args.move)
+
     try:
         t0 = time.time()
-        print 'Starting ' + os.path.basename(__file__) + '...'
+        print ('Starting ' + os.path.basename(__file__) + '...')
         run(args.inputa, args.inputb, args.output, args.move)
-        print 'Finished in %.2f seconds' % (time.time() - t0)
+        print ('Finished in %.2f seconds' % (time.time() - t0))
     except:
-        print 'Execution failed!'
-        print traceback.format_exc()
+        print ('Execution failed!')
+        print (traceback.format_exc())
+
+if __name__ == "__main__":
+    main()
