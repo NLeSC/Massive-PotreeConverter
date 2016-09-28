@@ -118,8 +118,6 @@ You need to run different iterations until there is only one Potree-OctTree
 The script `mpc-merge-all` can be used to merged all the Potree-OctTrees into one
 but this has to be used carefully.
 
-You have a single massive potree octree! Enjoy it!
-
 See an example in [AHN2](http://ahn2.pointclouds.nl).
 
 For that web service also the following repositories where used:
@@ -147,7 +145,7 @@ Run the `fill_db_potree.py`
 
 We have created a Dockerfile which is a Ubuntu 14.04 with the proper installations of PDAL, PotreeConverter, LAStools (open) and Massive-PotreeConverter. It is meant to help you when running the `generate_tiles.py`, `generate_potree.py`, `merge_potree.py` and `merge_potree_all.py`
 
-Dont's know about Docker? See [Docker] (https://www.docker.com/)
+Don't know about Docker? See [Docker] (https://www.docker.com/)
 
 There is also an image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/) that can be directly pulled and work with!
 

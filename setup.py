@@ -44,6 +44,7 @@ setup(
             'mpc-info=pympc.get_info:main',
             'mpc-tiling=pympc.generate_tiles:main',
             'mpc-merge=pympc.merge_potree:main',
+            'mpc-merge-all=pympc.merge_potree_all:main',
         ],
     },
 )

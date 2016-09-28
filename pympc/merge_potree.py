@@ -161,10 +161,10 @@ def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
     description="Merge two Potree OctTrees into a single one")
-    parser.add_argument('-a','--inputa',default='',help='Input Potree OctTree A',type=str, required=True)
-    parser.add_argument('-b','--inputb',default='',help='Input Potree OctTree B',type=str, required=True)
-    parser.add_argument('-o','--output',default='',help='Output Potree OctTree',type=str, required=True)
-    parser.add_argument('-m','--move',help='Use mv instead of cp when creating the output octtree. In this case the input data is partially dropped (but process may be faster due to less required IO) [default False]',default=False,action='store_true')
+    parser.add_argument('-a','--inputa',default='',help='Input Potree-OctTree A',type=str, required=True)
+    parser.add_argument('-b','--inputb',default='',help='Input Potree-OctTree B',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output Potree-OctTree',type=str, required=True)
+    parser.add_argument('-m','--move',help='Use mv instead of cp when merging Potree-OctTrees. In this case the input data is partially dropped (but process will be faster due to less required IO) [default False]',default=False,action='store_true')
     return parser
 
 def main():
