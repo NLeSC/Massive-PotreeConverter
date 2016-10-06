@@ -127,7 +127,7 @@ For that web service also the following repositories where used:
 
 ### Optional steps
 
-- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `sort_index_tiles.py`.
+- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `mpc-sort-index`.
 
 - Fill a DB with the extents of the files in the raw data
 
@@ -136,10 +136,10 @@ createdb extents
 psql extents -c "create extension postgis"
 ```
 
-Run the `fill_db_raw.py`.
+Run the `mpc-db-extents`.
 
 - Fill a DB with the extents of the files in the potree octree.
-Run the `fill_db_potree.py`
+Run the `mpc-db-extents-potree`
 
 ## Docker
 

@@ -45,6 +45,10 @@ setup(
             'mpc-tiling=pympc.generate_tiles:main',
             'mpc-merge=pympc.merge_potree:main',
             'mpc-merge-all=pympc.merge_potree_all:main',
+            'mpc-wkt=pympc.get_wkt:main',
+            'mpc-sort-index=pympc.sort_index:main',
+            'mpc-db-extents=pympc.fill_db_extents:main',
+            'mpc-db-extents-potree=pympc.fill_db_extents_potree:main',
         ],
     },
 )

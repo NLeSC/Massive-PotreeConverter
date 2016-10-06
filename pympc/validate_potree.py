@@ -2,14 +2,7 @@
 """Validates that the HRC files are correct in a Potree Octtree"""
 
 import argparse, traceback, time, os, json
-import utils
-
-def argument_parser():
-    """ Define the arguments and return the parser object"""
-    parser = argparse.ArgumentParser(
-    description="Validates that the HRC files are correct in a Potree Octtree")
-    parser.add_argument('-i','--input',default='',help='Input folder with the Potree Octtree',type=str, required=True)
-    return parser
+from pympc import utils
 
 def getNames(node, hierarchyStepSize, data, extension):
     names = []
@@ -19,7 +12,6 @@ def getNames(node, hierarchyStepSize, data, extension):
                 if data[level][i]:
                     names.append(utils.getNodeName(level, i, node, hierarchyStepSize, extension)[0])
     return names
-
 
 def validateNode(node, nodeAbsPath, hierarchyStepSize, extension):
     hrcFile = node + '.hrc'
@@ -36,12 +28,12 @@ def validateNode(node, nodeAbsPath, hierarchyStepSize, extension):
                 (childNode, isFile) = utils.getNodeName(level, i, node, hierarchyStepSize, extension)
                 childNodeAbsPath = nodeAbsPath + '/' + childNode
                 if not os.path.exists(childNodeAbsPath):
-                    print 'Error: could not find ', childNodeAbsPath
+                    print ('Error: could not find ', childNodeAbsPath)
                     raise Exception(node + ' in ' + nodeAbsPath + ' is not correct')
                 if isFile:
-                    fNumPoints = utils.getPCFileDetails(childNodeAbsPath)[0] 
+                    fNumPoints = utils.getPCFileDetails(childNodeAbsPath)[0]
                     if hrcNumPoints != fNumPoints:
-                        print 'Error: number of points in HRC (' + str(hrcNumPoints) + ') != number of points in file (' + str(fNumPoints) + ') in ' + childNodeAbsPath
+                        print ('Error: number of points in HRC (' + str(hrcNumPoints) + ') != number of points in file (' + str(fNumPoints) + ') in ' + childNodeAbsPath)
                 else:
                     validateNode(node + childNode, childNodeAbsPath, hierarchyStepSize, extension)
 
@@ -61,20 +53,32 @@ def run(inputFolder):
         extension = 'laz'
     else:
         raise Exception('Error: ' + __file__ + ' only compatible with las/laz format')
-    
+
     validateNode('r', inputFolder + '/data/r', json.loads(open(inputFolder + '/cloud.js', 'r').read())['hierarchyStepSize'], extension)
-    
-    print 'The Potree Octree is correct!'
-    
-if __name__ == "__main__":
+
+    print ('The Potree Octree is correct!')
+
+
+def argument_parser():
+    """ Define the arguments and return the parser object"""
+    parser = argparse.ArgumentParser(
+    description="Validates that the HRC files are correct in a Potree Octtree")
+    parser.add_argument('-i','--input',default='',help='Input folder with the Potree Octtree',type=str, required=True)
+    return parser
+
+
+def main():
     args = argument_parser().parse_args()
-    print 'Input Potree Octtree: ', args.input
-    
+    print ('Input Potree Octtree: ', args.input)
+
     try:
         t0 = time.time()
-        print 'Starting ' + os.path.basename(__file__) + '...'
+        print ('Starting ' + os.path.basename(__file__) + '...')
         run(args.input)
-        print 'Finished in %.2f seconds' % (time.time() - t0)
+        print ('Finished in %.2f seconds' % (time.time() - t0))
     except:
-        print 'Execution failed!'
-        print traceback.format_exc()
+        print ('Execution failed!')
+        print (traceback.format_exc())
+
+if __name__ == "__main__":
+    main()

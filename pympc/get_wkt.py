@@ -1,17 +1,6 @@
 #!/usr/bin/env python
-"""This script generate for each tile a WKT with BBOX of the contained files"""
-import os, argparse, traceback, time, multiprocessing
-import utils
-
-def argument_parser():
-    """ Define the arguments and return the parser object"""
-    parser = argparse.ArgumentParser(
-    description="Create WKT with extents of files in the tiles")
-    parser.add_argument('-i','--input',default='',help='Input folder with the tiles',type=str, required=True)
-    parser.add_argument('-o','--output',default='',help='Output folder to dump the WKT files',type=str, required=True)
-    parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
-    parser.add_argument('-a','--approx',help='Only outputs one a BBOX per tile instead of a BBOX per file in tile. [default False]',default=False,action='store_true')
-    return parser
+import os, argparse, traceback, time, multiprocessing, glob
+from pympc import utils
 
 def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, useApprox):
     kill_received = False
@@ -29,8 +18,14 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, useApprox):
         else:
             tFile = open(outputFolder + '/' + os.path.basename(tileAbsPath) + '.wkt', 'w')
             (tMinX,tMinY,tMaxX,tMaxY) = (None, None, None, None)
-            for tilefile in os.listdir(tileAbsPath):
-                (_, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tileAbsPath + '/' + tilefile)
+
+            if os.path.isfile(tileAbsPath):
+                tilefiles =  [tileAbsPath,]
+            else:
+                tilefiles = glob.glob(tileAbsPath + '/*')
+
+            for tilefile in tilefiles:
+                (_, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(tilefile)
                 if useApprox:
                     if tMinX == None or tMinX > fMinX:
                         tMinX = fMinX
@@ -45,7 +40,7 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, useApprox):
             if useApprox and tMinX != None:
                 tFile.write('POLYGON ((%f %f, %f %f, %f %f, %f %f, %f %f))\n' % (tMinX, tMaxY, tMinX, tMinY, tMaxX, tMinY, tMaxX, tMaxY, tMinX, tMaxY))
             tFile.close()
-            resultsQueue.put((processIndex, tileAbsPath)) 
+            resultsQueue.put((processIndex, tileAbsPath))
 
 def run(inputFolder, outputFolder, numberProcs, useApprox):
     # Check input parameters
@@ -54,52 +49,64 @@ def run(inputFolder, outputFolder, numberProcs, useApprox):
     if os.path.isfile(outputFolder):
         raise Exception('Error: There is a file with the same name as the output folder. Please, delete it!')
     elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
-        raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')  
-    
+        raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
+
         # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
-    
+
     os.system('mkdir -p ' + outputFolder)
-    
+
     tilesNames = os.listdir(inputFolder)
     if 'tiles.js' in tilesNames:
         tilesNames.remove('tiles.js')
     numTiles = len(tilesNames)
-    
+
      # Add tasks/inputFiles
     for i in range(numTiles):
         tasksQueue.put(inputFolder + '/' + tilesNames[i])
     for i in range(numberProcs): #we add as many None jobs as numberProcs to tell them to terminate (queue is FIFO)
         tasksQueue.put(None)
-    
+
     processes = []
     # We start numberProcs users processes
     for i in range(numberProcs):
-        processes.append(multiprocessing.Process(target=runProcess, 
+        processes.append(multiprocessing.Process(target=runProcess,
             args=(i, tasksQueue, resultsQueue, outputFolder, useApprox)))
         processes[-1].start()
 
     # Get all the results (actually we do not need the returned values)
     for i in range(numTiles):
         resultsQueue.get()
-        print 'Completed %d of %d (%.02f%%)' % (i+1, numTiles, 100. * float(i+1) / float(numTiles))
+        print ('Completed %d of %d (%.02f%%)' % (i+1, numTiles, 100. * float(i+1) / float(numTiles)))
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
 
-if __name__ == "__main__":
+def argument_parser():
+    """ Define the arguments and return the parser object"""
+    parser = argparse.ArgumentParser(
+    description="From a folder full of point cloud elements (LAS/LAZ files or subfolders containing LAS/LAZ files), it create a WKT file with extent/s of the elements")
+    parser.add_argument('-i','--input',default='',help='Input folder with the point cloud elements (a element can be a single LAS/LAZ file or a folder with LAS/LAZ files)',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output folder for the WKT files',type=str, required=True)
+    parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
+    parser.add_argument('-a','--approx',help='Only outputs one a BBOX per element instead of a BBOX per file in element (only applies if an element is a folder). [default False]',default=False,action='store_true')
+    return parser
+
+def main():
     args = argument_parser().parse_args()
-    print 'Input folder: ', args.input
-    print 'Output folder: ', args.output
-    print 'Number of processes: ', args.proc
-    print 'Approximation: ', args.approx
+    print ('Input folder: ', args.input)
+    print ('Output folder: ', args.output)
+    print ('Number of processes: ', args.proc)
+    print ('Approximation: ', args.approx)
     try:
         t0 = time.time()
-        print 'Starting ' + os.path.basename(__file__) + '...'
+        print ('Starting ' + os.path.basename(__file__) + '...')
         run(args.input, args.output, args.proc, args.approx)
-        print 'Finished in %.2f seconds' % (time.time() - t0)
+        print ('Finished in %.2f seconds' % (time.time() - t0))
     except:
-        print 'Execution failed!'
-        print traceback.format_exc()
+        print ('Execution failed!')
+        print (traceback.format_exc())
 
+if __name__ == "__main__":
+    main()
