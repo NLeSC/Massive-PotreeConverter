@@ -168,7 +168,7 @@ depends on specified number of tiles:
     parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
     parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
     parser.add_argument('-e','--extent',default='',help='XY extent to be used for the tiling, specify as "minX minY maxX maxY". maxX-minX must be equal to maxY-minY. This is required to have a good extent matching with the octree',type=str, required=True)
-    parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
+    parser.add_argument('-n','--number',default='',help='Number of tiles (must be the power of 4. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
     parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
     return parser
 

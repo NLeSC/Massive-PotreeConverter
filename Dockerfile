@@ -1,24 +1,14 @@
 # DockertFile for the Massive-PotreeConverter
-FROM ubuntu:14.04
+FROM continuumio/miniconda3
 MAINTAINER Oscar Martinez Rubi <o.rubi@esciencecenter.nl>
 RUN apt-get update -y
 
-# Add g++4.9 required by PotreeConverter
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test
-RUN apt-get update -y
-RUN apt-get install -y g++-4.9
+# INSTALL compilers and build toold
+RUN apt-get install -y gcc cmake build-essential g++
 
-# Install some required packages
-RUN apt-get install -y wget git cmake g++ cmake-gui cmake-curses-gui zlib1g-dev libncurses5-dev build-essential unzip
-# Install GEOS, PROJ4, TIFF and GEOTIFF
-RUN apt-get install -y libgeos-dev libproj-dev libtiff4-dev libgeotiff-dev
-# Install Boost 1.55
-RUN apt-get install -y libboost1.55-all-dev
-# Install GDAL
+# INSTALL PDAL
+RUN apt-get install -y libgeos-dev libproj-dev libtiff-dev libgeotiff-dev
 RUN apt-get install -y libgdal-dev
-
-# Install LASZIP
 WORKDIR /opt
 RUN wget http://download.osgeo.org/laszip/laszip-2.1.0.tar.gz
 RUN tar xvfz laszip-2.1.0.tar.gz
@@ -27,67 +17,50 @@ RUN mkdir makefiles
 WORKDIR /opt/laszip-2.1.0/makefiles/
 RUN cmake ..
 RUN make; make install
-
-# Install liblas
 WORKDIR /opt
-RUN git clone git://github.com/libLAS/libLAS.git liblas
-WORKDIR /opt/liblas/
-RUN git checkout tags/1.8.0
+RUN wget http://download.osgeo.org/pdal/PDAL-1.3.0-src.tar.gz
+RUN tar xvzf PDAL-1.3.0-src.tar.gz
+WORKDIR /opt/PDAL-1.3.0-src
 RUN mkdir makefiles
-WORKDIR /opt/liblas/makefiles/
-RUN wget https://raw.githubusercontent.com/NLeSC/pointcloud-benchmark/master/install/centos7/FindPROJ4.cmake
-RUN mv FindPROJ4.cmake ../cmake/modules/
-RUN cmake -G "Unix Makefiles" .. -DWITH_GDAL=ON  -DWITH_GEOTIFF=ON -DWITH_LASZIP=ON -DWITH_PKGCONFIG=ON -DWITH_TESTS=ON
+WORKDIR /opt/PDAL-1.3.0-src/makefiles
+RUN apt-get install -y libjsoncpp-dev
+RUN cmake -G "Unix Makefiles" ../
 RUN make; make install
 
-# Install PDAL (using commit that works)
-WORKDIR /opt/
-RUN git clone https://github.com/PDAL/PDAL.git PDAL-trunk
-WORKDIR /opt/PDAL-trunk/
-RUN git checkout d61e3db8b8e76c7c84bdefffbcf9d754df4baacf
-RUN mkdir makefiles
-WORKDIR /opt/PDAL-trunk/makefiles/
-RUN cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DWITH_APPS=ON -DWITH_GEOTIFF=ON -DWITH_LASZIP=ON -DWITH_TESTS=ON  -DCMAKE_CXX_FLAGS="-std=c++11 -Wl,--no-as-needed -ldl" -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--no-as-needed -ldl" -DCMAKE_MODULE_LINKER_FLAGS="-Wl,--no-as-needed -ldl" -DCMAKE_EXE_LINKER_FLAGS="-Wl,--no-as-needed -ldl"  
-RUN make; make install
-
-# Change symlinks of gcc/g++ compilers to use 4.9
-RUN rm /usr/bin/gcc
-RUN rm /usr/bin/g++
-RUN ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
-RUN ln -s /usr/bin/g++-4.9 /usr/bin/g++
-
-# Install PotreeConverter
-WORKDIR /opt/
+# INSTALL PotreeConverter
+WORKDIR /opt
+RUN git clone https://github.com/m-schuetz/LAStools.git LAStools-PC
+WORKDIR /opt/LAStools-PC/LASzip
+RUN mkdir build
+WORKDIR /opt/LAStools-PC/LASzip/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release ..
+RUN make
+WORKDIR /opt
 RUN git clone https://github.com/potree/PotreeConverter.git
-WORKDIR /opt/PotreeConverter/
-RUN git checkout tags/1.3_alpha_c++14
+WORKDIR /opt/PotreeConverter
 RUN mkdir build
 WORKDIR /opt/PotreeConverter/build
-RUN cmake -DCMAKE_BUILD_TYPE=Release  ..
-RUN make; make install
+RUN apt-get install -y libboost-dev libboost-system1.55-dev libboost-thread1.55-dev libboost-filesystem1.55-dev libboost-program-options1.55-dev libboost-regex1.55-dev
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DLASZIP_INCLUDE_DIRS=/opt/LAStools-PC/LASzip/dll -DLASZIP_LIBRARY=/opt/LAStools-PC/LASzip/build/src/liblaszip.so ..
+RUN make
+RUN ln -s /opt/PotreeConverter/build/PotreeConverter/PotreeConverter /usr/local/bin/PotreeConverter
 
+# INSTALL LAStools
 WORKDIR /opt/
 RUN wget http://www.cs.unc.edu/~isenburg/lastools/download/lastools.zip
-RUN unzip lastools.zip 
+RUN apt-get install -y unzip
+RUN unzip lastools.zip
 WORKDIR /opt/LAStools/
 RUN make
-  
-#Install Massive-PotreeConverter
-RUN apt-get install -y python-numpy
-WORKDIR /opt/
-RUN git clone https://github.com/NLeSC/Massive-PotreeConverter.git
-
-#Create links for enabled executables
 RUN ln -s /opt/LAStools/bin/lasinfo /usr/local/sbin/lasinfo
 RUN ln -s /opt/LAStools/bin/lasmerge /usr/local/sbin/lasmerge
-    
-RUN ln -s /opt/Massive-PotreeConverter/python/get_info.py /usr/local/sbin/get_info.py
-RUN ln -s /opt/Massive-PotreeConverter/python/generate_tiles.py /usr/local/sbin/generate_tiles.py
-RUN ln -s /opt/Massive-PotreeConverter/python/merge_potree.py /usr/local/sbin/merge_potree.py
-RUN ln -s /opt/Massive-PotreeConverter/python/generate_potree.py /usr/local/sbin/generate_potree.py
-RUN ln -s /opt/Massive-PotreeConverter/python/merge_potree_all.py /usr/local/sbin/merge_potree_all.py
 
-RUN ldconfig
+# INSTALL pycoeman
+RUN apt-get install -y libfreetype6-dev libssl-dev libffi-dev
+RUN pip install git+https://github.com/NLeSC/pycoeman
+
+# INSTALL Massive-PotreeConverter
+RUN pip install git+https://github.com/NLeSC/Massive-PotreeConverter@ver2
 
 # Create 3 volumes to be used when running the script. Ideally each run must be mounted to a different physical device
 VOLUME ["/data1"]

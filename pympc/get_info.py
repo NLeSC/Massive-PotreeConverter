@@ -4,7 +4,7 @@
 import argparse, traceback, sys, math, time, os
 from pympc import utils
 
-def run(inputFolder, numberProcs, targetSize):
+def run(inputFolder, numberProcs, targetTile, targetSize):
     (_, tcount, tminx, tminy, tminz, tmaxx, tmaxy, tmaxz, _, _, _) = utils.getPCFolderDetails(inputFolder, numberProcs)
     #convert to integers
     tminx = int(math.ceil(tminx))
@@ -30,8 +30,21 @@ def run(inputFolder, numberProcs, targetSize):
     print('Average density [pts / m2]:' , density2)
     #print('Average density [pts / m3]:' , density3)
 
-    deepSpacing = 1 / math.sqrt(density2)
+    if tcount < targetTile:
+        print('Suggested number of tiles: 1. For this number of points Massive-PotreeConverter is not really required!')
+    else:
+        c = 1
+        numpertile = None
+        while True:
+            numtiles = math.pow(math.pow(2,c),2)
+            numpertile = float(tcount) / numtiles
+            if numpertile < targetTile:
+                break
+            else:
+                c+=1
+        print('Suggested number of tiles: ', numtiles)
 
+    deepSpacing = 1 / math.sqrt(density2)
     spacing = math.ceil(maxRange / math.sqrt(targetSize))
 
     numlevels = 0
@@ -52,19 +65,21 @@ def argument_parser():
     description="Gets the bounding box of the points in the files of the input folder. Also computes the number of points and the density. It also suggests spacing and number of levels to use for PotreeConverter")
     parser.add_argument('-i','--input',default='',help='Input folder with the point cloud files',type=str, required=True)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1]',type=int)
-    parser.add_argument('-t','--target',default=60000,help='Target average number of points per OctTree node [default is 60000]',type=int)
+    parser.add_argument('-m','--avgtile',default=5000000000,help='Target average number of points per tile [default is 5000000000]',type=int)
+    parser.add_argument('-t','--avgnode',default=60000,help='Target average number of points per OctTree node [default is 60000]',type=int)
     return parser
 
 def main():
     args = argument_parser().parse_args()
     print('Input folder: ' , args.input)
     print('Number of processes: ' , args.proc)
-    print('Target node size: ' , args.target)
+    print('Target tile number of points: ' , args.avgtile)
+    print('Target OctTree node number of points: ' , args.avgnode)
 
     try:
         t0 = time.time()
         print('Starting ' + os.path.basename(__file__) + '...')
-        run(args.input, args.proc, args.target)
+        run(args.input, args.proc, args.avgtile, args.avgnode)
         print('Finished in %.2f seconds' % (time.time() - t0))
     except:
         print('Execution failed!')
