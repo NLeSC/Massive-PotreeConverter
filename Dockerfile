@@ -60,7 +60,7 @@ RUN apt-get install -y libfreetype6-dev libssl-dev libffi-dev
 RUN pip install git+https://github.com/NLeSC/pycoeman
 
 # INSTALL Massive-PotreeConverter
-RUN pip install git+https://github.com/NLeSC/Massive-PotreeConverter@ver2
+RUN pip install git+https://github.com/NLeSC/Massive-PotreeConverter
 
 # Create 3 volumes to be used when running the script. Ideally each run must be mounted to a different physical device
 VOLUME ["/data1"]
