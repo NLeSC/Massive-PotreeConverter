@@ -1,40 +1,17 @@
 #!/usr/bin/env python
 """
-This script is used to distribute the points of a bunch of LAS/LAZ files in 
-different tiles. The XY extent of the different tiles match the XY extent of the 
-nodes of a certain level of a octree defined by the provided bounding box (z 
-is not required by the XY tiling). Which level of the octree is matched 
+This script is used to distribute the points of a bunch of LAS/LAZ files in
+different tiles. The XY extent of the different tiles match the XY extent of the
+nodes of a certain level of a octree defined by the provided bounding box (z
+is not required by the XY tiling). Which level of the octree is matched
 depends on specified number of tiles:
  - 4 (2X2) means matching with level 1 of octree
  - 16 (4x4) means matching with level 2 of octree
- and so on. 
+ and so on.
 """
 
 import argparse, traceback, time, os, math, multiprocessing, json
-import utils
-
-# Check the LAStools is installed and that it is in the PATH before libLAS
-if utils.shellExecute('pdal split --version').count('pdal split') == 0:
-    raise Exception("PDAL split is not installed. Be sure to have PDAL installed!")
-
-def argument_parser():
-    """ Define the arguments and return the parser object"""
-    parser = argparse.ArgumentParser(
-    description="""This script is used to distribute the points of a bunch of LAS/LAZ files in 
-different tiles. The XY extent of the different tiles match the XY extent of the 
-nodes of a certain level of a octree defined by the provided bounding box (z 
-is not required by the XY tiling). Which level of the octree is matched 
-depends on specified number of tiles:
- - 4 (2X2) means matching with level 1 of octree
- - 16 (4x4) means matching with level 2 of octree
- and so on. """)
-    parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
-    parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
-    parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
-    parser.add_argument('-e','--extent',default='',help='XY extent to be used for the tiling, specify as "minX minY maxX maxY". maxX-minX must be equal to maxY-minY. This is required to have a good extent matching with the octree',type=str, required=True)
-    parser.add_argument('-n','--number',default='',help='Number of tiles (must be the square of a number which is power of 2. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
-    parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
-    return parser
+from pympc import utils
 
 def getTileIndex(pX, pY, minX, minY, maxX, maxY, axisTiles):
     xpos = int((pX - minX) * axisTiles / (maxX - minX))
@@ -61,10 +38,10 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
         if inputFile == None:
             # If we receive a None job, it means we can stop
             kill_received = True
-        else:            
+        else:
             # Get number of points and BBOX of this file
             (fCount, fMinX, fMinY, _, fMaxX, fMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(inputFile)
-            print 'Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY
+            print ('Processing', os.path.basename(inputFile), fCount, fMinX, fMinY, fMaxX, fMaxY)
             # For the four vertices of the BBOX we get in which tile they should go
             posMinXMinY = getTileIndex(fMinX, fMinY, minX, minY, maxX, maxY, axisTiles)
             posMinXMaxY = getTileIndex(fMinX, fMaxY, minX, minY, maxX, maxY, axisTiles)
@@ -81,17 +58,17 @@ def runProcess(processIndex, tasksQueue, resultsQueue, minX, minY, maxX, maxY, o
                 # If not, we run PDAL gridder to split the file in pieces that can go to the tiles
                 tGCount = runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles)
                 if tGCount != fCount:
-                    print 'WARNING: split version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')'
-            resultsQueue.put((processIndex, inputFile, fCount))   
+                    print ('WARNING: split version of ', inputFile, ' does not have same number of points (', tGCount, 'expected', fCount, ')')
+            resultsQueue.put((processIndex, inputFile, fCount))
 
 def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, minY, maxX, maxY, axisTiles):
     pTempFolder = tempFolder + '/' + str(processIndex)
     if not os.path.isdir(pTempFolder):
         utils.shellExecute('mkdir -p ' + pTempFolder)
-        
+
     # Get the lenght required by the PDAL split filter in order to get "squared" tiles
     lengthPDAL = (maxX - minX) /  float(axisTiles)
-    
+
     utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x ' + str(minX) + ' --origin_y ' + str(minY) + ' --length ' + str(lengthPDAL))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
@@ -105,8 +82,8 @@ def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, min
         utils.shellExecute('mv ' + pTempFolder + '/' + gFile + ' ' + tileFolder + '/' + gFile)
         tGCount += gCount
     return tGCount
-    
-    
+
+
 def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs):
     # Check input parameters
     if not os.path.isdir(inputFolder) and not os.path.isfile(inputFolder):
@@ -116,32 +93,32 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
         raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
     # Get the number of tiles per dimension (x and y)
-    axisTiles = math.sqrt(numberTiles) 
+    axisTiles = math.sqrt(numberTiles)
     if (not axisTiles.is_integer()) or (int(axisTiles) % 2):
         raise Exception('Error: Number of tiles must be the square of number which is power of 2!')
     axisTiles = int(axisTiles)
-    
+
     # Create output and temporal folder
     utils.shellExecute('mkdir -p ' + outputFolder)
     utils.shellExecute('mkdir -p ' + tempFolder)
-    
+
     (minX, minY, maxX, maxY) = extent.split(' ')
     minX = float(minX)
     minY = float(minY)
     maxX = float(maxX)
     maxY = float(maxY)
-    
+
     if (maxX - minX) != (maxY - minY):
         raise Exception('Error: Tiling requires that maxX-minX must be equal to maxY-minY!')
-    
+
     inputFiles = utils.getFiles(inputFolder, recursive=True)
     numInputFiles = len(inputFiles)
-    print '%s contains %d files' % (inputFolder, numInputFiles)
+    print ('%s contains %d files' % (inputFolder, numInputFiles))
 
     # Create queues for the distributed processing
     tasksQueue = multiprocessing.Queue() # The queue of tasks (inputFiles)
     resultsQueue = multiprocessing.Queue() # The queue of results
-    
+
     # Add tasks/inputFiles
     for i in range(numInputFiles):
         tasksQueue.put(inputFiles[i])
@@ -151,7 +128,7 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     processes = []
     # We start numberProcs users processes
     for i in range(numberProcs):
-        processes.append(multiprocessing.Process(target=runProcess, 
+        processes.append(multiprocessing.Process(target=runProcess,
             args=(i, tasksQueue, resultsQueue, minX, minY, maxX, maxY, outputFolder, tempFolder, axisTiles)))
         processes[-1].start()
 
@@ -160,11 +137,11 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     for i in range(numInputFiles):
         (processIndex, inputFile, inputFileNumPoints) = resultsQueue.get()
         numPoints += inputFileNumPoints
-        print 'Completed %d of %d (%.02f%%)' % (i+1, numInputFiles, 100. * float(i+1) / float(numInputFiles))
+        print ('Completed %d of %d (%.02f%%)' % (i+1, numInputFiles, 100. * float(i+1) / float(numInputFiles)))
     # wait for all users to finish their execution
     for i in range(numberProcs):
         processes[i].join()
-    
+
     # Write the tile.js file with information about the tiles
     cFile = open(outputFolder + '/tiles.js', 'w')
     d = {}
@@ -175,21 +152,43 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     cFile.write(json.dumps(d,indent=4,sort_keys=True))
     cFile.close()
 
-    
-if __name__ == "__main__":
+
+def argument_parser():
+    """ Define the arguments and return the parser object"""
+    parser = argparse.ArgumentParser(
+    description="""This script is used to distribute the points of a bunch of LAS/LAZ files in
+different tiles. The XY extent of the different tiles match the XY extent of the
+nodes of a certain level of a octree defined by the provided bounding box (z
+is not required by the XY tiling). Which level of the octree is matched
+depends on specified number of tiles:
+ - 4 (2X2) means matching with level 1 of octree
+ - 16 (4x4) means matching with level 2 of octree
+ and so on. """)
+    parser.add_argument('-i','--input',default='',help='Input data folder (with LAS/LAZ files)',type=str, required=True)
+    parser.add_argument('-o','--output',default='',help='Output data folder for the different tiles',type=str, required=True)
+    parser.add_argument('-t','--temp',default='',help='Temporal folder where required processing is done',type=str, required=True)
+    parser.add_argument('-e','--extent',default='',help='XY extent to be used for the tiling, specify as "minX minY maxX maxY". maxX-minX must be equal to maxY-minY. This is required to have a good extent matching with the octree',type=str, required=True)
+    parser.add_argument('-n','--number',default='',help='Number of tiles (must be the power of 4. Example: 4, 16, 64, 256, 1024, etc.)',type=int, required=True)
+    parser.add_argument('-p','--proc',default=1,help='Number of processes [default is 1]',type=int)
+    return parser
+
+def main():
     args = argument_parser().parse_args()
-    print 'Input folder: ', args.input
-    print 'Output folder: ', args.output
-    print 'Temporal folder: ', args.temp
-    print 'Extent: ', args.extent
-    print 'Number of tiles: ', args.number
-    print 'Number of processes: ', args.proc
-    
+    print ('Input folder: ', args.input)
+    print ('Output folder: ', args.output)
+    print ('Temporal folder: ', args.temp)
+    print ('Extent: ', args.extent)
+    print ('Number of tiles: ', args.number)
+    print ('Number of processes: ', args.proc)
+
     try:
         t0 = time.time()
-        print 'Starting ' + os.path.basename(__file__) + '...'
+        print ('Starting ' + os.path.basename(__file__) + '...')
         run(args.input, args.output, args.temp, args.extent, args.number, args.proc)
-        print 'Finished in %.2f seconds' % (time.time() - t0)
+        print( 'Finished in %.2f seconds' % (time.time() - t0))
     except:
-        print 'Execution failed!'
-        print traceback.format_exc()
+        print ('Execution failed!')
+        print( traceback.format_exc())
+
+if __name__ == "__main__":
+    main()
