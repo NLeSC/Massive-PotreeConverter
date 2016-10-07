@@ -147,35 +147,33 @@ In addition to installing all the required software it also creates three volumn
 
 An example of using Massive-PotreeConverter through docker:
 
-1. Build the Massive-PotreeConverter docker image from the Dockerfile in this GitHub repository:
+- Build the Massive-PotreeConverter docker image from the Dockerfile in this GitHub repository or pull the image from Docker Hub. The following instructions assume that the first option was used. If you pulled the image from Docker you will need to replace the image name.
 ```
 cd /path/to/Massive-PotreeConverter
 docker build -t oscar/mpc:v1 .
-```
-Or pull the image from Docker Hub:
-```
+# OR
 docker pull oscarmartinezrubi/massive-potreeconverter
 ```
-The following instructions assume that the first option was used. If you pulled the image from Docker you will need to replace the image name.
-2. Assuming that our LAZ/LAS files are in `/media/data/big/sample`, run `mpc-info` to know the point cloud details:
+  
+- Assuming that our LAZ/LAS files are in `/media/data/big/sample`, run `mpc-info` to know the point cloud details:
 ```
 docker run -v /media/data/big/sample:/data1 oscar/mpc:v1 mpc-info -i /data1 -c 4
 ```
-3. Run `mpc-tiling` to generate tiles (use the number of tiles and X,Y values of the CAABB suggested in the previous step):
+
+- Run `mpc-tiling` to generate tiles (use the number of tiles and X,Y values of the CAABB suggested in the previous step). Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/media/data/big/sample/myfile` is accessed as `/data1/myfile` in the container.
 ```
 docker run -v /media/data/big/sample:/data1 -v /media/data/big/sample_tiles:/data2 -v /media/data/big/sample_tiles_temp:/data3 oscar/mpc:v1 mpc-tiling -i /data1/ -o /data2/ -t /data3/ -e "1555 1749 21659 21853" -n 4 -p 4
 ```
-Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/media/data/big/sample/myfile` is accessed as `/data1/myfile` in the container.
-4. Run `mpc-create-config-pycoeman` to create the XML configuration file for the different PotreeConverters. Then run them in parallel in the local machine with `coeman-par-local`. Note that we use the details suggested by `mpc-info` for the PotreeConverters.
+
+- Run `mpc-create-config-pycoeman` to create the XML configuration file for the different PotreeConverters. Then run them in parallel in the local machine with `coeman-par-local`. Note that we use the details suggested by `mpc-info` for the PotreeConverters. Note that pycoeman can also be used to run the various PotreeConverters in a SGE cluster or in a bunch of ssh-reachable machines. However, the docker instance is only meant for local executions. To use SGE clusters or a bunch of ssh-reachable machines you need to install Massive-PotreeConverter and dependencies in all the involved machines.
 ```
 mkdir /media/data/big/sample_distpotree
 docker run -v /media/data/big/sample_distpotree:/data1 -v /media/data/big/sample_tiles:/data2 oscar/mpc:v1 mpc-create-config-pycoeman -i /data2 -o /data1/ParallelPotreeConverter.xml -f LAZ -l 9 -s 83 -e "1555 1749 -94 21659 21853 20010"
 docker run -v /media/data/big/sample_distpotree:/data1 -v /media/data/big/sample_tiles:/data2 oscar/mpc:v1 coeman-par-local -d / -c /data1/ParallelPotreeConverter.xml -e /data1/execution -n 4
 ```
-Note that pycoeman can also be used to run the various PotreeConverters in a SGE cluster or in a bunch of ssh-reachable machines. However, the docker instance is only meant for local executions. To use SGE clusters or a bunch of ssh-reachable machines you need to install Massive-PotreeConverter and dependencies in all the involved machines.
-5. Run the script to merge all the Potree-OctTrees into one:
+
+- Run the script to merge all the Potree-OctTrees into one. Note that in this case we only mount and use one volume. For this specific script it is better to have the same device for both input and output.
 ```
 sudo mv sample_distpotree/execution/*/* sample_distpotree/poctrees/
 docker run -v /media/data/big/sample_distpotree:/data1 oscar/mpc:v1 mpc-merge-all -i /data1/poctrees -o /data1/poctrees_merge -m
 ```
-Note that in this case we only mount and use one volume. For this specific script it is better to have the same device for both input and output.
