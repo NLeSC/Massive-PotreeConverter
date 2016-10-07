@@ -124,15 +124,13 @@ For this web also the following repositories where used:
 
 - Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `mpc-sort-index`.
 
-- Fill a DB with the extents of the files in the raw data
+- Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create a DB and add the postgis extension
 ```
 createdb extents
 psql extents -c "create extension postgis"
 ```
-Run the `mpc-db-extents`.
 
-- Fill a DB with the extents of the files in the potree octree.
-Run the `mpc-db-extents-potree`
+- Fill a DB with the extents of the files in the potree octree. Run the `mpc-db-extents-potree`
 
 ## Docker
 
