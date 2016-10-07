@@ -157,18 +157,15 @@ Or pull the image from Docker Hub:
 docker pull oscarmartinezrubi/massive-potreeconverter
 ```
 The following instructions assume that the first option was used. If you pulled the image from Docker you will need to replace the image name.
-
 2. Assuming that our LAZ/LAS files are in `/media/data/big/sample`, run `mpc-info` to know the point cloud details:
 ```
 docker run -v /media/data/big/sample:/data1 oscar/mpc:v1 mpc-info -i /data1 -c 4
 ```
-
 3. Run `mpc-tiling` to generate tiles (use the number of tiles and X,Y values of the CAABB suggested in the previous step):
 ```
 docker run -v /media/data/big/sample:/data1 -v /media/data/big/sample_tiles:/data2 -v /media/data/big/sample_tiles_temp:/data3 oscar/mpc:v1 mpc-tiling -i /data1/ -o /data2/ -t /data3/ -e "1555 1749 21659 21853" -n 4 -p 4
 ```
 Note that we specify 3 different local folders which will be available in the docker container, one for the input data, one for the output and one for the temporal data. Also note that a local file in `/media/data/big/sample/myfile` is accessed as `/data1/myfile` in the container.
-
 4. Run `mpc-create-config-pycoeman` to create the XML configuration file for the different PotreeConverters. Then run them in parallel in the local machine with `coeman-par-local`. Note that we use the details suggested by `mpc-info` for the PotreeConverters.
 ```
 mkdir /media/data/big/sample_distpotree
@@ -176,7 +173,6 @@ docker run -v /media/data/big/sample_distpotree:/data1 -v /media/data/big/sample
 docker run -v /media/data/big/sample_distpotree:/data1 -v /media/data/big/sample_tiles:/data2 oscar/mpc:v1 coeman-par-local -d / -c /data1/ParallelPotreeConverter.xml -e /data1/execution -n 4
 ```
 Note that pycoeman can also be used to run the various PotreeConverters in a SGE cluster or in a bunch of ssh-reachable machines. However, the docker instance is only meant for local executions. To use SGE clusters or a bunch of ssh-reachable machines you need to install Massive-PotreeConverter and dependencies in all the involved machines.
-
 5. Run the script to merge all the Potree-OctTrees into one:
 ```
 sudo mv sample_distpotree/execution/*/* sample_distpotree/poctrees/
