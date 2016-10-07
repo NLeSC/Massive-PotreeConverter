@@ -77,11 +77,10 @@ More detailed steps:
 
 - We get the bounding cube, the number of points and the average density of the massive point cloud. We can use `mpc-info`.
 First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
-The tool also computes suggested values for the number of tiles and for the Cubic Axis Aligned Bounding Box (CAABB), the spacing and the number of levels. These values must be used in the next steps!
+The tool also computes suggested values for the number of tiles and for the Cubic Axis Aligned Bounding Box (CAABB), the spacing and the number of levels. These values must be used in the next steps! Assuming  `input` is a folder with a bunch of LAS or LAZ files, run:
 ```
 mpc-info -i input -c [number processes]
 ```
-where `input` is a folder with a bunch of LAS or LAZ files
 
 - We use `mpc-tiling` to create tiles and we use the previous computed (by `mpc-info`)
 number of tiles and CAABB (only X and Y coordinates). Note that the number of tiles
@@ -97,25 +96,23 @@ previously computed CAABB, spacing and number of levels.
 Use `mpc-create-config-pycoeman` to create a XML with the list of PotreeConverter commands that have to be executed.
 The format used is the parallel commands XML configuration file format for pycoeman.
 Then run any of the pycoeman tools to execute the commands. There are options to run them locally, in a SGE cluster or in a bunch of ssh-reachable hosts.
-In all cases it is not recommended to use more than 8 cores per machine since the processing is quite IO-bound.
+In all cases it is not recommended to use more than 8 cores per machine since the processing is quite IO-bound. The example is using pycoeman locally in which case `.` must be the parent folder of `tiles`. For other pycoeman parallel commands execution modes visit https://github.com/NLeSC/pycoeman.
 ```
 mpc-create-config-pycoeman -i tiles -o ParallelPotreeConverter.xml -f [format LAS or LAZ] -l [levels] -s [spacing] -e "[minX] [minY] [minZ] [maxX] [maxY] [maxZ]"
 coeman-par-local -d . -c ParallelPotreeConverter.xml -e ParallelExecution -n [number processes]
 ```
-The example is using pycoeman locally in which case `.` must be the parent folder of `tiles`. For other pycoeman parallel commands execution modes visit https://github.com/NLeSC/pycoeman.
 
 - After the various Potree-OctTrees are created (one per tile) we need to merge them
 into a single one. For this you need to use the `mpc-merge` tool which
 joins two Potree-OctTrees into one.
 You need to run different iterations until there is only one Potree-OctTree
 The script `mpc-merge-all` can be used to merged all the Potree-OctTrees into one
-but this has to be used carefully.
+but this has to be used carefully. The final Potree-Octree will be the folder in `Potree-OctTrees-merged` with the highest merging value.
 ```
 mkdir Potree-OctTrees
 mv ParallelExecution/*/* Potree-OctTrees
 mpc-merge-all -i Potree-OctTrees -o Potree-OctTrees-merged -m
 ```
-The final Potree-Octree will be the folder in `Potree-OctTrees-merged` with the highest merging value.
 
 See an example in [AHN2](http://ahn2.pointclouds.nl).
 For this web also the following repositories where used:
