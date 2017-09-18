@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
-import sys, os, subprocess, struct, numpy, math, multiprocessing
+import sys, os, glob, subprocess, struct, numpy, math, multiprocessing
 
 PC_FILE_FORMATS = ['las','laz']
 OCTTREE_NODE_NUM_CHILDREN = 8
@@ -57,34 +57,17 @@ returns a list with only one element, the given file """
     # If extensions is not a list but a string we converted to a list
     if type(extensions) == str:
         extensions = [extensions,]
+    # If input element is file, return it
+    if(os.path.isfile(inputElement)):
+        fname,fext = os.path.splitext(inputElement)
+        return [inputElement] if fext.lower() in extensions else []
+    # Else, use recursive globbing
+    files = []
+    for ext in extensions:
+        files.extend(glob.glob(os.path.join(inputElement,'*.' + ext),recursive = recursive))
+        files.extend(glob.glob(os.path.join(inputElement,'*.' + ext.upper()),recursive = recursive))
+    return list(set(files))
 
-    inputElementAbsPath = os.path.abspath(inputElement)
-    if os.path.isdir(inputElementAbsPath):
-        elements = sorted(os.listdir(inputElementAbsPath), key=str.lower)
-        absPaths=[]
-        for element in elements:
-            elementAbsPath = os.path.join(inputElementAbsPath,element)
-            if os.path.isdir(elementAbsPath):
-                if recursive:
-                    absPaths.extend(getFiles(elementAbsPath, extensions, recursive))
-            else: #os.path.isfile(elementAbsPath)
-                isValid = False
-                for extension in extensions:
-                    if elementAbsPath.endswith(extension):
-                        isValid = True
-                if isValid:
-                    absPaths.append(elementAbsPath)
-        return absPaths
-    elif os.path.isfile(inputElementAbsPath):
-        isValid = False
-        for extension in extensions:
-            if inputElementAbsPath.endswith(extension):
-                isValid = True
-        if isValid:
-            return [inputElementAbsPath,]
-    else:
-        raise Exception("ERROR: inputElement is neither a valid folder nor file")
-    return []
 
 def getPCFileDetails(absPath):
     """ Get the details (count numPoints and extent) of a LAS/LAZ file (using LAStools, hence it is fast)"""
