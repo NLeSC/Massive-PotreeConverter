@@ -9,7 +9,7 @@ if out.decode(sys.stdout.encoding).count('PDAL') == 0:
 
 # Second we check PotreeConverter in installed and in the PATH
 (out,err) = subprocess.Popen('PotreeConverter -h', shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-if out.decode(sys.stdout.encoding).count('usage: PotreeConverter') == 0:
+if out.decode(sys.stdout.encoding).count('command not found') != 0:
     print('Installation could not be done: PotreeConverter could not be found.')
     sys.exit(1)
 
