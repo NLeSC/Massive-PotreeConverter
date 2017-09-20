@@ -80,11 +80,11 @@ Look at the web page of [PDAL](http://www.pdal.io/compilation/unix.html) to inst
 
 More detailed steps:
 
-- get_info.py: We get the bounding cube, the number of points and the average density of the massive point cloud.
+- mpc-info: We get the bounding cube, the number of points and the average density of the massive point cloud.
 First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
 The tool also computes suggested values for the number of tiles and for the Cubic Axis Aligned Bounding Box (CAABB), the spacing, the number of levels and suggested potreeconverter command. These values must be used in the next steps! Assuming [laz input directory] is a folder with a bunch of LAS or LAZ files, run:
 ```
-python get_info.py -i [laz input directory]
+mpc-info -i [laz input directory] -c [number processes]
 ```
 
 - We use `mpc-tiling` to create tiles and we use the previous computed (by `mpc-info`)
