@@ -12,11 +12,8 @@ The steps to convert a massive point cloud into the Potree-OctTree are:
 
 All the details can be found in the publication [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
 
-## Dependencies
-In order to run the four basic Massive-PotreeConverter steps we need PDAL, LAStools (only the open-source components) pycoeman and PotreeConverter.
-
 In addition, this repository also contains tools to:
- - Sort and index a bunch of LAS/LAZ files in parallel (this requires a commercial LAStools license)
+ - Sort and index a bunch of LAS/LAZ files in parallel.
  - Dump the extents of a bunch of LAS/LAZ files into a PostGIS database. This is useful for LAStools as a pre-filter step when dealing with large number of files.
  - Dump the extents of the nodes of a Potree-OctTree into a PostGIS database. Each node of the tree is stored in a separate file.
 
@@ -30,7 +27,7 @@ Massive-PotreeConverter has been used for the dutch [AHN2](http://ahn2.pointclou
 
 The following libraries/packages are required for the basic components of Massive-PotreeConverter:
 
-[PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (only open-source).
+[PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (the open-source license is enough). The *<path_to_lastools>/bin* should be added to the Linux **PATH**. 
 
 Concretely the following command-line tools must be available: pdal, PotreeConverter, coeman-par-local (or coeman-par-sge or coeman-par-ssh), lasinfo and lasmerge
 
@@ -39,8 +36,6 @@ For now Massive-PotreeConverter works only in Linux systems. Requires Python 3.5
 There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
 
 ## Installation
-
-Install the dependencies, i.e. PDAL, PotreeConverter, pycoeman and LAStools (only open-source for basic components but commercial license is required for the additional components).
 
 Clone this repository and install it with pip (using a virtualenv is recommended):
 
