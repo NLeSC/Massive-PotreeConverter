@@ -1,4 +1,10 @@
 # Massive-PotreeConverter
+
+The [PotreeConverter](https://github.com/potree/PotreeConverter) builds potree octree from laz files.
+When you have very many or big laz files then running a single PotreeConverter job will take a very long time.
+The Massive-PotreeConverter reduces the wallclock time of creating the octree by a divide and conquer approach.
+It does this by creating octree's in parallel and merging the octree's into a single octree.
+
 This repository extends the [PotreeConverter](https://github.com/potree/PotreeConverter)
 through a bunch of Python scripts to make it able to convert massive
 point clouds to the Potree-OctTree format.
@@ -19,21 +25,22 @@ In addition, this repository also contains tools to:
 
 These additional tools can be used to make rectangular selections on the raw data or in the different levels of the Potree-OctTree offering a multi-level selection tool. This is for example done in https://github.com/NLeSC/ahn-pointcloud-viewer-ws/blob/master/src/main/python/create_user_file.py. In this example a LAS/LAZ file is created from the selected data.
 
-Massive-PotreeConverter has been used for the dutch [AHN2](http://ahn2.pointclouds.nl) with 640 Billion points.
-
-[![Join the chat at https://gitter.im/NLeSC/ahn-pointcloud-viewer](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NLeSC/ahn-pointcloud-viewer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+Massive-PotreeConverter has been used for the Dutch [AHN2](http://ahn2.pointclouds.nl) with 640 Billion points.
 
 ## Requirements
 
 The following libraries/packages are required for the basic components of Massive-PotreeConverter:
 
-[PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (the open-source license is enough). The *<path_to_lastools>/bin* should be added to the Linux **PATH**. 
+- [PDAL](http://www.pdal.io/)
+- [PotreeConverter](https://github.com/potree/PotreeConverter)
+- [pycoeman](https://github.com/NLeSC/pycoeman)
+- [LAStools](http://rapidlasso.com/lastools/) (the open-source license is enough). The *<path_to_lastools>/bin* should be added to the Linux **PATH**.
 
 Concretely the following command-line tools must be available: pdal, PotreeConverter, coeman-par-local (or coeman-par-sge or coeman-par-ssh), lasinfo and lasmerge
 
 For now Massive-PotreeConverter works only in Linux systems. Requires Python 3.5.
 
-There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
+There is a Dockerfile available and a image build in [Docker Hub](https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
 
 ## Installation
 
@@ -66,7 +73,7 @@ In order to perform the additional components some additional libraries/packages
 
 For the installation of PotreeConverter look at https://github.com/potree/PotreeConverter. You will need to add the build executable manually to the PATH.
 
-Look at the web page of [PDAL] (http://www.pdal.io/compilation/unix.html) to install it. You will need to install also GDAL, Geos, GeoTiff and LASzip. Note that for Massive-PotreeConverter there is no need to build PDAL with PostgreSQL support.
+Look at the web page of [PDAL](http://www.pdal.io/compilation/unix.html) to install it. You will need to install also GDAL, Geos, GeoTiff and LASzip. Note that for Massive-PotreeConverter there is no need to build PDAL with PostgreSQL support.
 
 
 ## Method
@@ -144,9 +151,9 @@ sudo -u postgres psql
 We have created a Dockerfile to use the basic tools of Massive-PotreeConverter.
 It is meant to help you when running `mpc-info`, `mpc-tiling`, `mpc-create-config-pycoeman`, `coeman-par-local` and `mpc-merge` (or `mpc-merge-all`)
 
-Don't know about Docker? See [Docker] (https://www.docker.com/)
+Don't know about Docker? See [Docker](https://www.docker.com/)
 
-There is also an image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/) that can be directly pulled and worked with!
+There is also an image build in [Docker Hub](https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/) that can be directly pulled and worked with!
 
 In addition to installing all the required software it also creates three volumnes (/data1, /data2, /data3) which are meant to be mounted from different devices when executing docker run. Ideally always try to run in a way that the input data is in one device and the output in another (we actually have 3 volumes because of temp data folder required by `mpc-tiling`)
 
@@ -159,7 +166,7 @@ docker build -t oscar/mpc:v1 .
 # OR
 docker pull oscarmartinezrubi/massive-potreeconverter
 ```
-  
+
 - Assuming that our LAZ/LAS files are in `/media/data/big/sample`, run `mpc-info` to know the point cloud details:
 ```
 docker run -v /media/data/big/sample:/data1 oscar/mpc:v1 mpc-info -i /data1 -c 4
