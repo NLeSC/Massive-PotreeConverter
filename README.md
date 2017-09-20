@@ -12,11 +12,8 @@ The steps to convert a massive point cloud into the Potree-OctTree are:
 
 All the details can be found in the publication [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
 
-## Dependencies
-In order to run the four basic Massive-PotreeConverter steps we need PDAL, LAStools (only the open-source components) pycoeman and PotreeConverter.
-
 In addition, this repository also contains tools to:
- - Sort and index a bunch of LAS/LAZ files in parallel (this requires a commercial LAStools license)
+ - Sort and index a bunch of LAS/LAZ files in parallel.
  - Dump the extents of a bunch of LAS/LAZ files into a PostGIS database. This is useful for LAStools as a pre-filter step when dealing with large number of files.
  - Dump the extents of the nodes of a Potree-OctTree into a PostGIS database. Each node of the tree is stored in a separate file.
 
@@ -30,7 +27,7 @@ Massive-PotreeConverter has been used for the dutch [AHN2](http://ahn2.pointclou
 
 The following libraries/packages are required for the basic components of Massive-PotreeConverter:
 
-[PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (only open-source).
+[PDAL] (http://www.pdal.io/), [PotreeConverter] (https://github.com/potree/PotreeConverter),  [pycoeman] (https://github.com/NLeSC/pycoeman) and [LAStools] (http://rapidlasso.com/lastools/) (the open-source license is enough). The *<path_to_lastools>/bin* should be added to the Linux **PATH**. 
 
 Concretely the following command-line tools must be available: pdal, PotreeConverter, coeman-par-local (or coeman-par-sge or coeman-par-ssh), lasinfo and lasmerge
 
@@ -39,8 +36,6 @@ For now Massive-PotreeConverter works only in Linux systems. Requires Python 3.5
 There is a Dockerfile available and a image build in [Docker Hub] (https://registry.hub.docker.com/u/oscarmartinezrubi/massive-potreeconverter/). See end of page for information on how to use it.
 
 ## Installation
-
-Install the dependencies, i.e. PDAL, PotreeConverter, pycoeman and LAStools (only open-source for basic components but commercial license is required for the additional components).
 
 Clone this repository and install it with pip (using a virtualenv is recommended):
 
@@ -78,11 +73,11 @@ Look at the web page of [PDAL] (http://www.pdal.io/compilation/unix.html) to ins
 
 More detailed steps:
 
-- We get the bounding cube, the number of points and the average density of the massive point cloud. We can use `mpc-info`.
+- get_info.py: We get the bounding cube, the number of points and the average density of the massive point cloud.
 First argument is the input folder with all the input data. Second argument is the number of processes we want to use to get the information.
-The tool also computes suggested values for the number of tiles and for the Cubic Axis Aligned Bounding Box (CAABB), the spacing and the number of levels. These values must be used in the next steps! Assuming  `input` is a folder with a bunch of LAS or LAZ files, run:
+The tool also computes suggested values for the number of tiles and for the Cubic Axis Aligned Bounding Box (CAABB), the spacing, the number of levels and suggested potreeconverter command. These values must be used in the next steps! Assuming [laz input directory] is a folder with a bunch of LAS or LAZ files, run:
 ```
-mpc-info -i input -c [number processes]
+python get_info.py -i [laz input directory]
 ```
 
 - We use `mpc-tiling` to create tiles and we use the previous computed (by `mpc-info`)
@@ -125,12 +120,21 @@ For this web also the following repositories where used:
 
 ### Optional steps
 
-- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `mpc-sort-index`.
-
-- Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create a DB and add the postgis extension
+- Index and sort the raw data (we consider raw data the data before the 2D tiling). Since we are running it on a Linux system we need [wine](https://www.winehq.org/) to run *lassort.exe*. Hence, before the user runs `mpc-sort-index` (s)he should set the environment variable *LASSORT*.
 ```
-createdb extents
-psql extents -c "create extension postgis"
+export LASSORT="wine <path_to_lastools>/bin/lassort.exe"
+```
+
+- Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create an user, a DB and add the postgis extension:
+```
+#login into postgres
+sudo -u postgres psql
+
+> create user <your_linux_user_name> with password '<password>';
+> create database pc_extents owner <your_linux_user_name>;
+> \connect pc_extents
+> create extension postgis
+> \q
 ```
 
 - Fill a DB with the extents of the files in the potree octree. Run the `mpc-db-extents-potree`
