@@ -130,10 +130,16 @@ For this web also the following repositories where used:
 export LASSORT="wine <path_to_lastools>/lassort.exe"
 ```
 
-- Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create a DB and add the postgis extension
+- Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create an user, a DB and add the postgis extension:
 ```
-createdb extents
-psql extents -c "create extension postgis"
+#login into postgres
+sudo -u postgres psql
+
+> create user <your_linux_user_name> with password '<password>';
+> create database pc_extents owner <your_linux_user_name>;
+> \connect pc_extents
+> create extension postgis
+> \q
 ```
 
 - Fill a DB with the extents of the files in the potree octree. Run the `mpc-db-extents-potree`
