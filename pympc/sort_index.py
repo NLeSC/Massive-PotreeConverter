@@ -27,7 +27,8 @@ def runProcess(processIndex, tasksQueue, resultsQueue, outputFolder, runMode, us
                     outputAbsPath = outputFolder + '/' + os.path.basename(tileAbsPath) + '/' + os.path.basename(tileFileAbsPath)
                 commands = []
                 if 's' in runMode:
-                    commands.append('lassort.exe -i ' + tileFileAbsPath + ' -o ' + outputAbsPath)
+                    cmd = os.environ["LASSORT"]
+                    commands.append(cmd + ' -i ' + tileFileAbsPath + ' -o ' + outputAbsPath)
                 else:
                     if useLink:
                         commands.append('ln -s ' + tileFileAbsPath + ' ' + outputAbsPath)
@@ -93,7 +94,7 @@ def run(inputFolder, outputFolder, runMode, useLink, numberProcs):
 def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
-    description="Sort and index with LAStools a folder with point cloud elements (LAS/LAZ files or subfolders containing LAS/LAZ files). The sorted/index data is copied in the output folder")
+    description="Sort and index with LAStools a folder with point cloud elements (LAS/LAZ files or subfolders containing LAS/LAZ files). The sorted/index data is copied in the output folder. To enable ")
     parser.add_argument('-i','--input',default='',help='Input folder with the point cloud elements (a element can be a single LAS/LAZ file or a folder with LAS/LAZ files)',type=str, required=True)
     parser.add_argument('-o','--output',default='',help='Output folder for the sorted and indexed elements',type=str, required=True)
     parser.add_argument('-m','--mode',default='si',help='Running mode. Specify s to run only the lassort, i to run only the lasindex and si to run both. [default is si, i.e. to run both lassort and lasindex].',type=str)
@@ -110,9 +111,10 @@ def main():
     print ('Number of processes: ', args.proc)
 
     # Check the LAStools lassort.exe is installed
-    if ('s' in args.mode) and (utils.shellExecute('lassort.exe -version').count('LAStools') == 0):
-        raise Exception("LAStools lassort.exe is not found!. Please check that it is in PATH")
-
+    if ('s' in args.mode):
+        cmd = os.environ.get("LASSORT",None)
+        if(not cmd or utils.shellExecute(cmd + ' -version').count('LAStools') == 0):
+            raise Exception("LAStools lassort.exe is not found!. Please define LASSORT environment variable!")
     try:
         t0 = time.time()
         print ('Starting ' + os.path.basename(__file__) + '...')
