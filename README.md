@@ -125,7 +125,10 @@ For this web also the following repositories where used:
 
 ### Optional steps
 
-- Index and sort the raw data (we consider raw data the data before the 2D tiling). Use `mpc-sort-index`.
+- Index and sort the raw data (we consider raw data the data before the 2D tiling). Since we are running it on a Linux system we need [wine](https://www.winehq.org/) to run *lassort.exe*. Hence, before the user runs `mpc-sort-index` (s)he should set the environment variable *LASSORT*.
+```
+export LASSORT="wine <path_to_lastools>/lassort.exe"
+```
 
 - Fill a DB with the extents of the files in the raw data. Before running `mpc-db-extents`, first create a DB and add the postgis extension
 ```
