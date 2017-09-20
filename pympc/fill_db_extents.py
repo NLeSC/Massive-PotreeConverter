@@ -83,9 +83,6 @@ def argument_parser():
     """ Define the arguments and return the parser object"""
     parser = argparse.ArgumentParser(
     description="""Creates a table in a PostgreSQL/PostGIS DB with the extent information of the LAS/LAZ files in a folder and creates index. This requires that the DB has PostGIS extension installed""")
-    parser.add_argument('-i','--input',default='',help='Input folder with the LAS/LAZ files',type=str, required=True)
-    parser.add_argument('-t','--table',default=utils.DB_TABLE_RAW,help='Table name [default is ' + utils.DB_TABLE_RAW + ']',type=str, required=True)
-    parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
     parser.add_argument('-u','--dbuser',default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass',default='',help='DB pass',type=str)
@@ -93,6 +90,10 @@ def argument_parser():
     parser.add_argument('-r','--dbport',default='',help='DB port',type=str)
     parser.add_argument('-c','--proc',default=1,help='Number of processes [default is 1].',type=int)
     parser.add_argument('-a','--add',default=False,help='Adds the extents to an existing table [default is False]. In this case no index is created',action='store_true')
+    requiredArgs = parser.add_argument_group('required arguments')
+    requiredArgs.add_argument('-i','--input',default='',help='Input folder with the Potree OctTree (must contain the cloud.js file and the data folder)',type=str, required=True)
+    requiredArgs.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
+    return parser
     return parser
 
 def main():
@@ -104,13 +105,11 @@ def main():
     print ('DB pass: ', '*'*len(args.dbpass))
     print ('DB host: ', args.dbhost)
     print ('DB port: ', args.dbport)
-    print ('Table: ', args.table)
-    print ('Number of processes: ', args.proc)
 
     try:
         t0 = time.time()
         print ('Starting ' + os.path.basename(__file__) + '...')
-        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport, args.table, args.proc, args.add)
+        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport, utils.DB_TABLE_RAW, args.proc, args.add)
         print ('Finished in %.2f seconds' % (time.time() - t0))
     except:
         print ('Execution failed!')

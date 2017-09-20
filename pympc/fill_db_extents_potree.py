@@ -110,14 +110,14 @@ def argument_parser():
     description="""Creates a DB table with the extent information of the files in a Potree OctTree.
 The files are not opened, instead we get the information from the HRC files and the
 known extent of the OctTree nodes""")
-    parser.add_argument('-i','--input',default='',help='Input folder with the Potree OctTree (must contain the cloud.js file and the data folder)',type=str, required=True)
-    parser.add_argument('-t','--table',default=utils.DB_TABLE_POTREE,help='Table name [default is ' + utils.DB_TABLE_POTREE + ']',type=str, required=True)
-    parser.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     parser.add_argument('-d','--dbname',default=utils.DB_NAME,help='Postgres DB name [default ' + utils.DB_NAME + ']',type=str)
     parser.add_argument('-u','--dbuser',default=USERNAME,help='DB user [default ' + USERNAME + ']',type=str)
     parser.add_argument('-p','--dbpass',default='',help='DB pass',type=str)
     parser.add_argument('-b','--dbhost',default='',help='DB host',type=str)
     parser.add_argument('-r','--dbport',default='',help='DB port',type=str)
+    requiredArgs = parser.add_argument_group('required arguments')
+    requiredArgs.add_argument('-i','--input',default='',help='Input folder with the Potree OctTree (must contain the cloud.js file and the data folder)',type=str, required=True)
+    requiredArgs.add_argument('-s','--srid',default='',help='SRID',type=int, required=True)
     return parser
 
 def main():
@@ -133,7 +133,7 @@ def main():
     try:
         t0 = time.time()
         print ('Starting ' + os.path.basename(__file__) + '...')
-        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport, args.table)
+        run(args.input, args.srid, args.dbname, args.dbpass, args.dbuser, args.dbhost, args.dbport, utils.DB_TABLE_POTREE)
         print ('Finished in %.2f seconds' % (time.time() - t0))
     except:
         print ('Execution failed!')
