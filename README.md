@@ -16,9 +16,9 @@ The steps to convert a massive point cloud into the Potree-OctTree are:
 - For all the tiles run PotreeConverter to create Potree-OctTrees. We use pycoeman (https://github.com/NLeSC/pycoeman).
 - Merge the multiple Potree-OctTrees into a single massive Potree-OctTree.
 
-The steps as summarized in the following scheme: ![](figures/2D-simplification-of-the-various-steps.png). 
+All these steps are summarized in the following scheme: ![](figures/2D-simplification-of-the-various-steps.png). 
 
-For more details the user should read [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
+For a detailed description of each step the user should read [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
 
 In addition, this repository also contains tools to:
  - Sort and index a bunch of LAS/LAZ files in parallel.
