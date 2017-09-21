@@ -2,20 +2,23 @@ from distutils.core import setup
 import subprocess, sys
 
 # First we check PDAL in installed and in the PATH
-(out,err) = subprocess.Popen('pdal -help', shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-if out.decode(sys.stdout.encoding).count('PDAL') == 0:
+try:
+    subprocess.check_call(["pdal","-h"])
+except:
     print('Installation could not be done: PDAL could not be found.')
     sys.exit(1)
 
 # Second we check PotreeConverter in installed and in the PATH
-(out,err) = subprocess.Popen('PotreeConverter -h', shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-if out.decode(sys.stdout.encoding).count('command not found') != 0:
+try:
+    subprocess.check_call(["PotreeConverter","-h"])
+except:
     print('Installation could not be done: PotreeConverter could not be found.')
     sys.exit(1)
 
 # Third we check LAStools in installed and in the PATH
-(out,err) = subprocess.Popen('lasmerge -h', shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-if (out+err).decode(sys.stdout.encoding).count('LAStools') == 0:
+try:
+    subprocess.check_call(["lasmerge","-h"])
+except:
     print('Installation could not be done: LAStools could not be found.')
     sys.exit(1)
 
