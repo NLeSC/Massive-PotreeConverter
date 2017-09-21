@@ -23,7 +23,8 @@ For example:
   >Suggested Potree-OctTree spacing:  41
   >Suggested Potree-OctTree number of levels:  7
   >Suggested potreeconverter command:
-  >$(which PotreeConverter) -o <potree output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format   LAZ -i <laz input directory>
+  >$(which PotreeConverter) -o <potree output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" 
+  >--output-format   LAZ -i `<laz input directory>`
 
 ## Option 1: running a potree for each laz seperatly in order to then merge them
 * RUN
@@ -38,13 +39,16 @@ done `
  ` python3 pympc/merge_potree_all.py -i $PWD/uk_st43_flat_pt_ind -o uk_st43_pt_merged `
 
 ## Visualization
-* view in potree-viewer [add capture2_mid_merge]
+* View in potree-viewer. 
+
+*For demonstration purposes we first merged only part of the octree tiles, presented in this figure. When merging all the laz files we will get Figure 2 (see below).*
+![alt text](https://github.com/NLeSC/Massive-PotreeConverter/blob/test_data/data/Capture2_midmerge.PNG) 
 
 ## Option 2: use PotreeConverter to build potree octree from the laz files .  
 
  `$(which PotreeConverter) -o $PWD/uk_st43_pt_all_flat -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i $PWD/uk_merge_rawlaz_tiles/uk_st43_flat/ `
 
-* view in potree-viewer [add capture1]
+* view in potree-viewer ![alt text](https://github.com/NLeSC/Massive-PotreeConverter/blob/test_data/data/Capture1.PNG) 
 - Copy the directory <uk_st43_flat_pt> to ~/potree/pointclouds and change the 
 
 
