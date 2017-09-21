@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Gets the CAABB, number of points and average density for a point cloud"""
+
+"""Gets the CAABB, number of points and average density for a point cloud. Also gets a suggested potreeconverter command"""
 
 import argparse, traceback, sys, math, time, os
 from pympc import utils
@@ -76,7 +77,7 @@ def main():
     print('Number of processes: ' , args.proc)
     print('Target tile number of points: ' , args.avgtile)
     print('Target OctTree node number of points: ' , args.avgnode)
-
+    
     try:
         t0 = time.time()
         print('Starting ' + os.path.basename(__file__) + '...')
