@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Gets the CAABB, number of points and average density for a point cloud"""
+
+"""Gets the CAABB, number of points and average density for a point cloud. Also gets a suggested potreeconverter command"""
 
 import argparse, traceback, sys, math, time, os
 from pympc import utils
@@ -57,7 +58,8 @@ def run(inputFolder, numberProcs, targetTile, targetSize):
     print('Suggested Potree-OctTree CAABB: ', minX,minY,minZ,maxX,maxY,maxZ)
     print('Suggested Potree-OctTree spacing: ', spacing)
     print('Suggested Potree-OctTree number of levels: ', numlevels)
-
+    print('Suggested potreeconverter command:')
+    print('$(which PotreeConverter) -o <potree output directory> -l %i -s %i --aabb "%i %i %i %i %i %i" --output-format LAZ -i <laz input directory>' % (numlevels, spacing, minX,minY,minZ,maxX,maxY,maxZ))
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
@@ -75,7 +77,7 @@ def main():
     print('Number of processes: ' , args.proc)
     print('Target tile number of points: ' , args.avgtile)
     print('Target OctTree node number of points: ' , args.avgnode)
-
+    
     try:
         t0 = time.time()
         print('Starting ' + os.path.basename(__file__) + '...')
