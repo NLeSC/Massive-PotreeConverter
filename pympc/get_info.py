@@ -57,7 +57,8 @@ def run(inputFolder, numberProcs, targetTile, targetSize):
     print('Suggested Potree-OctTree CAABB: ', minX,minY,minZ,maxX,maxY,maxZ)
     print('Suggested Potree-OctTree spacing: ', spacing)
     print('Suggested Potree-OctTree number of levels: ', numlevels)
-
+    print('Suggested potreeconverter command:')
+    print('$(which PotreeConverter) -o <potree output directory> -l %i -s %i --aabb "%i %i %i %i %i %i" --output-format LAZ -i <laz input directory>' % (numlevels, spacing, minX,minY,minZ,maxX,maxY,maxZ))
 
 def argument_parser():
     """ Define the arguments and return the parser object"""
