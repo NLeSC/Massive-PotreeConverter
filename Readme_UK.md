@@ -27,16 +27,16 @@ For example:
   >--output-format   LAZ -i `<laz input directory>`
 
 ## Option 1: run a potree for each laz seperatly in order to then merge them
-* RUN
+* RUN (use full path for the directories)
 
  `for d in 'ls uk_merge_rawlaz_tiles/uk_st43_flat'`
 `do
-$(which PotreeConverter) -o $PWD/uk_st43_flat_pt_ind/$d -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i $PWD/uk_merge_rawlaz_tiles/uk_st43_flat/$d
+$(which PotreeConverter) -o $<potree output directory>$d -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i $<laz input directory>$d
 done `
 
 * Merge the octrees: RUN 
 
- ` python3 pympc/merge_potree_all.py -i $PWD/uk_st43_flat_pt_ind -o uk_st43_pt_merged `
+ ` python3 pympc/merge_potree_all.py -i <potree output directory> -o <merged laz directory> `
 
 ## Visualization
 * View in potree-viewer. 
@@ -46,7 +46,7 @@ done `
 
 ## Option 2: use PotreeConverter to build potree octree from the laz files .  
 
- `$(which PotreeConverter) -o $PWD/uk_st43_pt_all_flat -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i $PWD/uk_merge_rawlaz_tiles/uk_st43_flat/ `
+ `$(which PotreeConverter) -o <output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i <laz input directory> `
 
 ## Visualization
 * View in potree-viewer ![alt text](https://github.com/NLeSC/Massive-PotreeConverter/blob/test_data/data/Capture1.PNG) 
