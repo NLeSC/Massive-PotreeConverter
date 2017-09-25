@@ -57,8 +57,9 @@ For example:
 ![alt tag](https://github.com/NLeSC/Massive-PotreeConverter/blob/master/data/Potree_UK_midmerge1.PNG) 
 
 ## Option 2: use PotreeConverter to build potree octree from the laz files .  
-
- `$(which PotreeConverter) -o <output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i <laz input directory> `
+* RUN 
+ 
+`$(which PotreeConverter) -o <output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format LAZ -i <laz input directory> `
 
 ## Visualization
 * View in potree-viewer 
