@@ -1,5 +1,7 @@
 # Massive-PotreeConverter
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.910906.svg)](https://doi.org/10.5281/zenodo.910906)
+
 The [PotreeConverter](https://github.com/potree/PotreeConverter) builds potree octree from laz files.
 When you have very many or big laz files then running a single PotreeConverter job will take a very long time.
 The Massive-PotreeConverter reduces the wallclock time of creating the octree by a divide and conquer approach.
@@ -16,7 +18,9 @@ The steps to convert a massive point cloud into the Potree-OctTree are:
 - For all the tiles run PotreeConverter to create Potree-OctTrees. We use pycoeman (https://github.com/NLeSC/pycoeman).
 - Merge the multiple Potree-OctTrees into a single massive Potree-OctTree.
 
-All the details can be found in the publication [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
+All these steps are summarized in the following scheme: ![](figures/2D-simplification-of-the-various-steps.png). 
+
+For a detailed description of each step the user should read [**Taming the beast: Free and open-source massive point cloud web visualization**](http://dx.doi.org/10.13140/RG.2.1.1731.4326/1).
 
 In addition, this repository also contains tools to:
  - Sort and index a bunch of LAS/LAZ files in parallel.
