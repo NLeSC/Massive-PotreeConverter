@@ -1,10 +1,10 @@
 # DockertFile for the Massive-PotreeConverter
-FROM continuumio/miniconda3
+FROM ubuntu:16.04
 MAINTAINER Oscar Martinez Rubi <o.rubi@esciencecenter.nl>
 RUN apt-get update -y
 
 # INSTALL compilers and build toold
-RUN apt-get install -y gcc cmake build-essential g++
+RUN apt-get install -y wget git cmake build-essential gcc g++ 
 
 # INSTALL PDAL
 RUN apt-get install -y libgeos-dev libproj-dev libtiff-dev libgeotiff-dev
@@ -25,7 +25,7 @@ RUN mkdir makefiles
 WORKDIR /opt/PDAL-1.3.0-src/makefiles
 RUN apt-get install -y libjsoncpp-dev
 RUN cmake -G "Unix Makefiles" ../
-RUN make; make install
+RUN make ; make install
 
 # INSTALL PotreeConverter
 WORKDIR /opt
@@ -40,13 +40,13 @@ RUN git clone https://github.com/potree/PotreeConverter.git
 WORKDIR /opt/PotreeConverter
 RUN mkdir build
 WORKDIR /opt/PotreeConverter/build
-RUN apt-get install -y libboost-dev libboost-system1.55-dev libboost-thread1.55-dev libboost-filesystem1.55-dev libboost-program-options1.55-dev libboost-regex1.55-dev
+RUN apt-get install -y libboost-all-dev
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DLASZIP_INCLUDE_DIRS=/opt/LAStools-PC/LASzip/dll -DLASZIP_LIBRARY=/opt/LAStools-PC/LASzip/build/src/liblaszip.so ..
-RUN make
-RUN ln -s /opt/PotreeConverter/build/PotreeConverter/PotreeConverter /usr/local/bin/PotreeConverter
+RUN make ; make install
+#RUN ln -s /opt/PotreeConverter/build/PotreeConverter/PotreeConverter /usr/local/bin/PotreeConverter
 
 # INSTALL LAStools
-WORKDIR /opt/
+WORKDIR /opt
 RUN wget http://www.cs.unc.edu/~isenburg/lastools/download/lastools.zip
 RUN apt-get install -y unzip
 RUN unzip lastools.zip
@@ -55,8 +55,9 @@ RUN make
 RUN ln -s /opt/LAStools/bin/lasinfo /usr/local/sbin/lasinfo
 RUN ln -s /opt/LAStools/bin/lasmerge /usr/local/sbin/lasmerge
 
+
 # INSTALL pycoeman
-RUN apt-get install -y libfreetype6-dev libssl-dev libffi-dev
+RUN apt-get install -y python-pip python-dev build-essential libfreetype6-dev libssl-dev libffi-dev
 RUN pip install git+https://github.com/NLeSC/pycoeman
 
 # INSTALL Massive-PotreeConverter
