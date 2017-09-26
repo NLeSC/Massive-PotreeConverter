@@ -17,19 +17,15 @@ Each tile is divided into NW,SE,NE,SW (zipped files), and some laz files might b
 Output contains information about suggested Potree-OctTree CAABB, spacing, number of levels and a suggeted potreeconverter command. 
 
 For example: 
-  >Average density [pts / m2]: 2.1390596605415118
-  
-  >Suggested number of tiles: 1. For this number of points Massive-PotreeConverter is not really required!
-  
-  >Suggested Potree-OctTree CAABB:  340000 130000 -1 349999 139999 9998
-  
-  >Suggested Potree-OctTree spacing:  41
-  
-  >Suggested Potree-OctTree number of levels:  7
-  
-  >Suggested potreeconverter command:
-  
-  >$(which PotreeConverter) -o <potree output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format   LAZ -i `<laz input directory>`
+```
+Average density [pts / m2]: 2.1390596605415118
+Suggested number of tiles: 1. For this number of points Massive-PotreeConverter is not really required!
+Suggested Potree-OctTree CAABB:  340000 130000 -1 349999 139999 9998
+Suggested Potree-OctTree spacing:  41
+Suggested Potree-OctTree number of levels:  7
+Suggested potreeconverter command:
+$(which PotreeConverter) -o <potree output directory> -l 7 -s 41 --aabb "340000 130000 -1 349999 139999 9998" --output-format   LAZ -i <laz input directory> 
+```
 
 ## Option 1: run a potree for each laz seperatly in order to then merge them
 * RUN (use full path for the directories)
