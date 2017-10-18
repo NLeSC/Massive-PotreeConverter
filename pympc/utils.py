@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Various methods reused in main scripts"""
-import sys, os, glob, subprocess, struct, numpy, math, multiprocessing
+import sys, os, glob2, subprocess, struct, numpy, math, multiprocessing
 
 PC_FILE_FORMATS = ['las','laz']
 OCTTREE_NODE_NUM_CHILDREN = 8
@@ -63,9 +63,10 @@ returns a list with only one element, the given file """
         return [inputElement] if fext.lower() in extensions else []
     # Else, use recursive globbing
     files = []
+    globpath = os.path.join(inputElement,'**') if recursive else inputElement
     for ext in extensions:
-        files.extend(glob.glob(os.path.join(inputElement,'*.' + ext),recursive = recursive))
-        files.extend(glob.glob(os.path.join(inputElement,'*.' + ext.upper()),recursive = recursive))
+        files.extend(glob2.glob(os.path.join(globpath,'*.' + ext)))
+        files.extend(glob2.glob(os.path.join(globpath,'*.' + ext.upper())))
     return list(set(files))
 
 

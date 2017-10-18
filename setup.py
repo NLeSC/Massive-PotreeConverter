@@ -40,7 +40,7 @@ setup(
     author_email='o.rubi@esciencecenter.nl',
     url='https://github.com/NLeSC/Massive-PotreeConverter',
     install_requires=[
-          'lxml', 'pycoeman', 'numpy'],
+          'lxml', 'pycoeman', 'numpy' , 'glob2'],
     entry_points={
         'console_scripts': [
             'mpc-create-config-pycoeman=pympc.create_pycoeman_config_run_massive_potree_converter:main',
