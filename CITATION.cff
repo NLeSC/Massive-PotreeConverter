@@ -1,0 +1,46 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it as below.
+title: Massive-PotreeConverter
+doi: 10.5281/zenodo.910906
+authors:
+- given-names: Oscar
+  family-names: Rubi
+  name-particle: Martinez
+  affiliation: Netherlands eScience Center
+- given-names: Stefan
+  family-names: Verhoeven
+  affiliation: Nederlands eScience Center
+- given-names: Yifat
+  family-names: Dzigan
+  affiliation: Netherlands eScience Center
+- given-names: Gijs
+  family-names: van Oord
+  affiliation: Netherlands eScience Center
+- given-names: Romulo
+  family-names: Goncalves
+  affiliation: Netherlands eScience Center
+version: 1.1.0
+date-released: 2017-09-21 00:00:00
+repository-code: https://github.com/NLeSC/Massive-PotreeConverter
+license: Apache-2.0
+references:
+- type: conference-paper
+  doi: 10.13140/RG.2.1.1731.4326/1
+  title: 'Taming the beast: Free and open-source massive point cloud web visualization'
+  authors:
+  - given-names: Oscar
+    family-names: Martinez-Rubi
+  - given-names: Stefan
+    family-names: Verhoeven
+  - given-names: Maarten Van
+    family-names: Meersbergen
+  - given-names: Markus
+    family-names: Schütz
+  - given-names: Peter Van
+    family-names: Oosterom
+  - given-names: Romulo
+    family-names: Goncalves
+  - given-names: Theo
+    family-names: Tijssen
