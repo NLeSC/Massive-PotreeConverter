@@ -22,7 +22,7 @@ authors:
   family-names: Goncalves
   affiliation: Netherlands eScience Center
 version: 1.1.0
-date-released: 2017-09-21 00:00:00
+date-released: 2017-09-21
 repository-code: https://github.com/NLeSC/Massive-PotreeConverter
 license: Apache-2.0
 references:
