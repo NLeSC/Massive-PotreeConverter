@@ -69,7 +69,7 @@ def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, min
     # Get the lenght required by the PDAL split filter in order to get "squared" tiles
     lengthPDAL = (maxX - minX) /  float(axisTiles)
 
-    utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x ' + str(minX) + ' --origin_y ' + str(minY) + ' --length ' + str(lengthPDAL))
+    utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x=' + str(minX) + ' --origin_y=' + str(minY) + ' --length ' + str(lengthPDAL))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
         (gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
