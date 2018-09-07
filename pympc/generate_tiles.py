@@ -69,7 +69,7 @@ def runPDALSplitter(processIndex, inputFile, outputFolder, tempFolder, minX, min
     # Get the lenght required by the PDAL split filter in order to get "squared" tiles
     lengthPDAL = (maxX - minX) /  float(axisTiles)
 
-    utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x ' + str(minX) + ' --origin_y ' + str(minY) + ' --length ' + str(lengthPDAL))
+    utils.shellExecute('pdal split -i ' + inputFile + ' -o ' + pTempFolder + '/' + os.path.basename(inputFile) + ' --origin_x=' + str(minX) + ' --origin_y=' + str(minY) + ' --length ' + str(lengthPDAL))
     tGCount = 0
     for gFile in os.listdir(pTempFolder):
         (gCount, gFileMinX, gFileMinY, _, gFileMaxX, gFileMaxY, _, _, _, _, _, _, _) = utils.getPCFileDetails(pTempFolder + '/' + gFile)
@@ -88,10 +88,10 @@ def run(inputFolder, outputFolder, tempFolder, extent, numberTiles, numberProcs)
     # Check input parameters
     if not os.path.isdir(inputFolder) and not os.path.isfile(inputFolder):
         raise Exception('Error: Input folder does not exist!')
-    if os.path.isfile(outputFolder):
+    elif os.path.isfile(outputFolder):
         raise Exception('Error: There is a file with the same name as the output folder. Please, delete it!')
-    elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
-        raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
+    #elif os.path.isdir(outputFolder) and os.listdir(outputFolder):
+    #    raise Exception('Error: Output folder exists and it is not empty. Please, delete the data in the output folder!')
     # Get the number of tiles per dimension (x and y)
     axisTiles = math.sqrt(numberTiles)
     if (not axisTiles.is_integer()) or (int(axisTiles) % 2):
