@@ -52,6 +52,7 @@ setup(
             'mpc-sort-index=pympc.sort_index:main',
             'mpc-db-extents=pympc.fill_db_extents:main',
             'mpc-db-extents-potree=pympc.fill_db_extents_potree:main',
+            'mpc-validate-tiles=pympc.validate_tiles:main',
         ],
     },
 )
