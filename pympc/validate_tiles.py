@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """
-This script is used to verify if the distribution the points of a bunch of LAS/LAZ files into
-different tiles was done correctly. It will first compare the total number of points in the input
-files with the number of points in the tiles. If they differ, the script will detect then which input
-file was not tilled correctly.
+Mpc-validate-tiles first compares the total number of points in the input files with the
+number of points in the output tiles. If they differ, the script will print the name of
+which input file was not tilled correctly. It uses SQLite3 (https://www.sqlite.org/index.html)
+to store all meta-data about the files and to perform some group-by and join operations
+to obtain the file names which were not tiled correctly.
 """
 import sqlite3
 import argparse, traceback, time, os, math, multiprocessing, json
